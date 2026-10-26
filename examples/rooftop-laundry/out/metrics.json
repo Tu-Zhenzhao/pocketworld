@@ -1,0 +1,15 @@
+{
+ "frames": 720,
+ "grid": 260,
+ "cells": 67600,
+ "medianCells": 43.0,
+ "meanCells": 43.31849791376912,
+ "maxCells": 70.0,
+ "minCells": 24.0,
+ "p99Cells": 65.82000000000005,
+ "medianPercent": 0.0636094674556213,
+ "maxOverMedian": 1.627906976744186,
+ "seamCells": 38,
+ "seamPercent": 0.056213017751479286,
+ "seamWithinRange": true
+}

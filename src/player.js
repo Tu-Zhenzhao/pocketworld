@@ -1,192 +1,184 @@
 /**
- * WebGL2 player. The canvas bitmap is the output resolution; the shader
- * snaps to `grid`, so the upscale is nearest-neighbor by construction.
- * Time is stepped at `fps` and wrapped to the loop. setTime(t) is exact.
+ * mount(canvas, manifestUrl) draws one prepared scene.
+ * The manifest is build/manifest.json from `pocketworld prep`.
+ * Textures stay at 1 cell per pixel inside the shader; `scale` is an integer
+ * CSS-pixel multiplier (default 4) so the dither stays square.
  */
-import { compile } from "./compile.js";
+import { shaders, textureNames } from "./shaders.js";
 
-function compileGL(gl, type, source) {
-  const shader = gl.createShader(type);
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const log = gl.getShaderInfoLog(shader) || "shader compile failed";
-    const err = new Error(log);
-    err.log = log;
-    err.source = source;
-    gl.deleteShader(shader);
-    throw err;
-  }
-  return shader;
+function oklab(c) {
+  const [r, g, b] = c.map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
 }
 
-export function mount(canvas, spec, opts = {}) {
-  const compiled = compile(spec);
-  const gl = canvas.getContext("webgl2", {
-    alpha: false,
-    antialias: false,
-    depth: false,
-    stencil: false,
-    preserveDrawingBuffer: true,
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error(`could not load ${url}`));
+    im.src = url;
   });
+}
+
+function flat(list, n) {
+  const f = new Float32Array(n);
+  const a = list.flat();
+  for (let i = 0; i < a.length && i < n; i++) f[i] = a[i];
+  return f;
+}
+
+async function resolveManifest(src) {
+  if (typeof src === "string") {
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(`could not load ${src}`);
+    const manifest = await res.json();
+    const base = new URL(".", new URL(src, document.baseURI));
+    return { manifest, base };
+  }
+  return { manifest: src, base: new URL(src.base || ".", document.baseURI) };
+}
+
+export async function mount(canvas, src, opts = {}) {
+  if (!canvas) throw new Error("mount needs a canvas");
+  const { manifest, base } = await resolveManifest(src);
+  const profile = manifest.profile;
+  if (!shaders[profile]) throw new Error(`unknown profile ${profile}`);
+  const names = textureNames[profile];
+  const scale = Math.max(1, Math.round(opts.scale ?? 4));
+  const G = manifest.grid;
+  canvas.width = canvas.height = G * scale;
+  const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true, antialias: false, alpha: false });
   if (!gl) throw new Error("WebGL2 is not available");
 
-  const vs = compileGL(gl, gl.VERTEX_SHADER, compiled.vert);
-  let fs;
-  try {
-    fs = compileGL(gl, gl.FRAGMENT_SHADER, compiled.frag);
-  } catch (err) {
-    err.message = `Fragment shader failed to compile\n${err.log || err.message}`;
-    throw err;
+  function sh(type, source) {
+    const x = gl.createShader(type);
+    gl.shaderSource(x, source);
+    gl.compileShader(x);
+    if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(x) || "shader compile failed");
+    }
+    return x;
   }
-  const program = gl.createProgram();
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program) || "program link failed");
+  const pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, shaders.vert));
+  gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, shaders[profile]));
+  gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(pr) || "shader link failed");
   }
-  gl.useProgram(program);
-
-  const buffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.useProgram(pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(program, "a");
+  const loc = gl.getAttribLocation(pr, "a");
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-  const uni = {
-    res: gl.getUniformLocation(program, "uRes"),
-    grid: gl.getUniformLocation(program, "uGrid"),
-    time: gl.getUniformLocation(program, "uTime"),
-    duration: gl.getUniformLocation(program, "uDuration"),
-    bayer: gl.getUniformLocation(program, "uBayer"),
-    origin: gl.getUniformLocation(program, "uOrigin"),
-    axisX: gl.getUniformLocation(program, "uAxisX"),
-    axisY: gl.getUniformLocation(program, "uAxisY"),
-    bg: gl.getUniformLocation(program, "uBg"),
-  };
-  const paramLoc = {};
-  const values = {};
-  for (const p of compiled.params) {
-    paramLoc[p.key] = gl.getUniformLocation(program, `u_${p.key}`);
-    values[p.key] = p.value;
+  const U = (n) => gl.getUniformLocation(pr, n);
+  const pal = manifest.palette.map((p) => p.map((v) => v / 255));
+  gl.uniform3fv(U("uPal"), flat(pal, 72));
+  gl.uniform3fv(U("uLab"), flat(pal.map((p) => oklab(p)), 72));
+  gl.uniform1i(U("uN"), manifest.palette.length);
+  gl.uniform1f(U("G"), G);
+  gl.uniform1f(U("uLoop"), manifest.loop);
+  gl.uniform1f(U("uSpread"), manifest.spread);
+  gl.uniform1f(U("uDither"), opts.dither === false ? 0 : 1);
+  gl.uniform2f(U("uRes"), canvas.width, canvas.height);
+  if (profile === "rain") {
+    gl.uniform3fv(U("uDrip"), flat(manifest.drips, 36));
+    gl.uniform1i(U("uND"), Math.min(12, manifest.drips.length));
+    gl.uniform2fv(U("uRip"), flat(manifest.ripples, 80));
+    gl.uniform2f(U("uPivot"), manifest.pivot[0], manifest.pivot[1]);
+  } else {
+    gl.uniform2fv(U("uMote"), flat(manifest.motes || [], 16));
+    gl.uniform1i(U("uNM"), Math.min(8, (manifest.motes || []).length));
   }
 
-  const camera = spec.camera;
-  const bg = hex(spec.background || "#ffffff");
-  const state = {
-    grid: opts.grid || spec.grid || 360,
-    bayer: opts.bayer || spec.bayer || 4,
-    fps: opts.fps || spec.fps || 12,
-    duration: spec.duration || 10,
-    time: 0,
-    paused: true,
-    raf: 0,
-  };
+  const images = await Promise.all(names.map((k) => loadImage(new URL(manifest.textures[k], base).href)));
+  images.forEach((im, i) => {
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, im);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const uniform = "u" + names[i][0].toUpperCase() + names[i].slice(1);
+    gl.uniform1i(U(uniform), i);
+  });
 
-  function quantize(t) {
-    const d = state.duration;
-    let x = t % d;
-    if (x < 0) x += d;
-    return Math.floor(x * state.fps + 1e-4) / state.fps;
-  }
+  let raf = 0;
+  let playing = false;
+  let fixed = opts.time == null ? null : +opts.time;
+  const t0 = performance.now();
 
-  function draw() {
-    const w = canvas.width || state.grid;
-    const h = canvas.height || state.grid;
-    gl.viewport(0, 0, w, h);
-    gl.useProgram(program);
-    gl.uniform2f(uni.res, w, h);
-    gl.uniform1f(uni.grid, state.grid);
-    gl.uniform1f(uni.time, state.time);
-    gl.uniform1f(uni.duration, state.duration);
-    gl.uniform1f(uni.bayer, state.bayer);
-    gl.uniform2f(uni.origin, camera.origin[0], camera.origin[1]);
-    gl.uniform2f(uni.axisX, camera.axisX[0], camera.axisX[1]);
-    gl.uniform2f(uni.axisY, camera.axisY[0], camera.axisY[1]);
-    gl.uniform3f(uni.bg, bg[0], bg[1], bg[2]);
-    for (const p of compiled.params) {
-      if (paramLoc[p.key]) gl.uniform1f(paramLoc[p.key], values[p.key]);
-    }
+  function draw(sec) {
+    const loop = manifest.loop;
+    const t = ((sec % loop) + loop) % loop;
+    gl.useProgram(pr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform1f(U("uT"), t);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.finish();
   }
 
-  let start = 0;
-  let origin = 0;
-  function loop(now) {
-    state.raf = requestAnimationFrame(loop);
-    if (state.paused) return;
-    state.time = quantize(origin + (now - start) / 1000);
-    draw();
+  function frame(now) {
+    raf = 0;
+    if (!playing) return;
+    draw(fixed == null ? (now - t0) / 1000 : fixed);
+    raf = requestAnimationFrame(frame);
   }
 
   function play() {
-    if (!state.paused) return;
-    state.paused = false;
-    start = performance.now();
-    origin = state.time;
-    if (!state.raf) state.raf = requestAnimationFrame(loop);
+    if (playing) return;
+    playing = true;
+    raf = requestAnimationFrame(frame);
   }
   function pause() {
-    state.paused = true;
+    playing = false;
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0;
   }
 
-  const reduced = opts.respectReducedMotion !== false && typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  state.time = quantize(opts.time ?? (reduced ? spec.poster || 0 : 0));
-  if (opts.size) {
-    canvas.width = opts.size;
-    canvas.height = opts.size;
-  }
-  draw();
-  if (opts.autoplay !== false && !reduced) play();
-
-  return {
-    spec,
-    params: compiled.params,
-    gl,
-    get time() { return state.time; },
-    get paused() { return state.paused; },
-    get grid() { return state.grid; },
-    get bayer() { return state.bayer; },
-    draw,
+  const player = {
+    manifest,
+    profile,
+    ready: true,
     play,
     pause,
+    draw,
     setTime(t) {
-      state.time = quantize(t);
-      origin = state.time;
-      start = performance.now();
-      draw();
+      fixed = t;
+      draw(t);
+      gl.finish();
+      return true;
     },
-    setParam(key, value) {
-      if (!(key in values)) throw new Error(`No param "${key}"`);
-      values[key] = Number(value);
-      draw();
-    },
-    getParam(key) { return values[key]; },
-    setGrid(grid) { state.grid = grid; draw(); },
-    setBayer(bayer) { state.bayer = bayer; draw(); },
-    resize(size) {
-      if (size) {
-        canvas.width = size;
-        canvas.height = size;
+    grab(t) {
+      draw(t);
+      const px = new Uint8Array(canvas.width * canvas.height * 4);
+      gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      let s = "";
+      for (let i = 0; i < px.length; i += 32768) {
+        s += String.fromCharCode.apply(null, px.subarray(i, i + 32768));
       }
-      draw();
+      return btoa(s);
+    },
+    info() {
+      return { grid: G, loop: manifest.loop, w: canvas.width, h: canvas.height, profile };
     },
     destroy() {
-      state.paused = true;
-      if (state.raf) cancelAnimationFrame(state.raf);
-      gl.deleteProgram(program);
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
-      gl.deleteBuffer(buffer);
+      pause();
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
     },
   };
-}
-
-function hex(h) {
-  const s = h.replace("#", "");
-  const n = parseInt(s.length === 3 ? s.split("").map((c) => c + c).join("") : s, 16);
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  draw(fixed ?? 0);
+  if (opts.autoplay !== false && fixed == null) play();
+  return player;
 }

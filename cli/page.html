@@ -1,47 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>pocketworld render</title>
-  <style>
-    html, body { margin: 0; background: #fff; }
-    canvas { display: block; }
-    pre { margin: 12px; color: #8a1e1e; white-space: pre-wrap; font: 12px/1.4 ui-monospace, monospace; }
-  </style>
+<meta charset="utf-8">
+<title>pocketworld</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; display: grid; place-items: center; }
+  canvas { image-rendering: pixelated; display: block; background: #fff; }
+</style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-  <pre id="err"></pre>
-  <script type="module">
-    import { mount } from "/src/player.js";
-    const q = new URLSearchParams(location.search);
-    const canvas = document.getElementById("c");
-    const size = Number(q.get("size") || 720);
-    canvas.width = canvas.height = size;
-    try {
-      const mod = await import(q.get("scene"));
-      const player = mount(canvas, mod.default, {
-        size,
-        grid: q.get("grid") ? Number(q.get("grid")) : undefined,
-        bayer: q.get("bayer") ? Number(q.get("bayer")) : undefined,
-        autoplay: false,
-        respectReducedMotion: false,
-      });
-      window.__player = player;
-      window.renderFrame = (t) => {
-        player.setTime(Number(t));
-        return player.time;
-      };
-      window.__params = player.params;
-      window.renderFrame(q.has("t") ? Number(q.get("t")) : (mod.default.poster || 0));
-      window.__ready = true;
-    } catch (err) {
-      const text = String(err && (err.stack || err.message) || err);
-      document.getElementById("err").textContent = text;
-      console.error(text);
-      window.__error = text;
-      window.__ready = true;
-    }
-  </script>
+<canvas id="c"></canvas>
+<script type="module">
+import { mount } from "/src/player.js";
+const q = new URLSearchParams(location.search);
+const scene = q.get("scene");
+if (!scene) throw new Error("missing ?scene=");
+const player = await mount(document.getElementById("c"), scene, {
+  scale: +(q.get("scale") || 1),
+  time: q.has("t") ? +q.get("t") : 0,
+  autoplay: false,
+  dither: !q.has("nodither"),
+});
+window.__player = player;
+window.__ready = true;
+window.setTime = (t) => player.setTime(t);
+window.grab = (t) => player.grab(t);
+window.info = () => player.info();
+</script>
+<script>
+window.__ready = false;
+window.isReady = () => window.__ready === true;
+</script>
 </body>
 </html>

@@ -1,279 +1,203 @@
 # pocketworld
 
-A pocket world is one looping diorama, drawn by one WebGL2 fragment shader. You author it as a JS module of named parts and named knobs. The compiler turns that into the shader. You never hand-edit the shader unless a part has no primitive for what you need, and then you add a short `glsl` snippet.
+Turn a reference painting into a dithered diorama that loops. The painting is the base layer. One WebGL2 shader moves layers of those pixels, then quantizes with a short OKLab palette and a 4×4 Bayer dither.
 
-Read `spec.md` for the look and `reference-prompt.md` for the image prompt. This file is the workflow.
+This is the default and the only mode. An earlier version drew people as signed-distance shapes. The figures always came out crude. That code is archived in `experimental/sdf/` and should not be extended.
 
-## The path
+Approved scenes, which this skill is written to reproduce:
 
-```
-one-line idea
-  → fill reference-prompt.md and make (or receive) a still
-  → checklist the still
-  → examples/<id>/scene.js + reference.jpg
-  → render a poster frame
-  → compare it with the reference
-  → render a few more times, including near the loop seam
-  → retune knobs when a person asks in plain language
-```
+- `examples/rain-bus-stop` — umbrella sway, a breath, lamp glow, ripples, drips, rain
+- `examples/rooftop-laundry` — cloth warp, inpainted background, shadow sway, a cat's breath, motes
 
-Study loops that inspired the series are not in the repo. Do not copy them, and do not feed their frames to an image model.
+Both are 260 cells, 12 seconds, 60 fps, seamless.
 
-## 1. Make the reference
+## What "good" means
 
-Fill `reference-prompt.md` with the user's scene. Generate it, or ask the human to. Save the chosen image as `examples/<id>/reference.jpg`.
+Any picture the user hands you should reach this quality through the standard flow below, with almost no one-off code. You intervene only when a specific frame is wrong, and then only with the knob that matches that problem. The map is further down. Do not invent a new shader per scene.
 
-Image models like smooth 3D and full-bleed framing. That is expected. The checklist decides what you keep.
+## Standard flow
 
-### Checklist
+1. **Get the still.** Use `reference-prompt.md`. Square, white page, isometric, no black outlines. Save it as `examples/<name>/reference.jpg`.
+2. **Pick a profile.**
+   - `rain` — wet ground, falling rain, drips, ripples, a glow, one or two rigid layers (an umbrella, a breathing torso).
+   - `laundry` — cloth or foliage that warps, something still in front of it, optional animal, shadows, motes.
+3. **Write `scene.json`.** Start from the nearest example. Change the polygons. Keep the `look` block unless a knob below says not to.
+4. **Place points without guessing.** `node cli/pocketworld.js overlay examples/<name> --step 64` writes `overlay.png`, the reference with a numbered grid and any polygons you already have. Read coordinates off it. Drop to `--step 32` for a hem or a hand.
+5. **Let colour propose masks.** `node cli/pocketworld.js suggest examples/<name>` writes `suggest.png` and `suggest.json`: eight key-colour candidates, a pale-cloth mask (the same test prep uses), and a dark-blue wet guess. Copy the points that land on the right material. Throw away the rings that don't. Rooftop was 88 hand points before this helper; you should not be clicking that many from a blank file.
+6. **Prep.** `node cli/pocketworld.js prep examples/<name>` writes `build/`: the continuous base, the inpainted fill, the masks, `palette.png`, `manifest.json`.
+7. **Look at the still before you trust the motion.** Open `build/base.png`. It should be the reference, in cells, airy, no black contour. Then `node cli/pocketworld.js dev` and open the playground, or the capture page `cli/page.html?scene=/examples/<name>/build/manifest.json&scale=4&t=3`.
+8. **Render and judge.** `node cli/pocketworld.js render examples/<name>` writes `out/loop.mp4` (60 fps, nearest ×4, x264 crf 12, `tune animation`), `out/loop.gif`, `out/compare.png`, `out/contact.png`, `out/contact_detail.png`, and `out/metrics.json`.
 
-Accept and build when most of these hold:
+The web component, once prep has run:
 
-- Square, or close, on a white field.
-- One cluster of subject, not a comic page and not a cropped close-up.
-- Long edges slope about 2 across for 1 down. People and posts are vertical.
-- A handful of flat colors. Light feels like it comes from the upper left.
-- You can point at every person and say where they look.
-
-Regenerate, and say why, when:
-
-- The camera is a front view, a perspective photo, or equal-angle isometric (1:1 in x and y).
-- The subject is cut by the frame.
-- There are several scenes in one image.
-
-A smooth, slightly full-bleed concept (the rain bus stop reference is one) is still usable. Keep its composition, its palette, and who looks at whom. Draw it again in the spec: more white margin, Bayer fade, 2:1 camera, 16-ish colors, no bloom. Write that in a comment at the top of the scene file so the next edit doesn't try to trace the JPEG.
-
-If the human insists on an off-spec image, build in the canonical camera anyway and treat the upload as a composition and color reference only. Tell them which checks failed.
-
-## 2. Block the scene out
-
-Copy the shape of `examples/juggler/scene.js` (small) or `examples/rain-bus-stop/scene.js` (ground, people, weather).
-
-```js
-import { scene, param, patch, person } from "../../src/scene.js";
-
-export default scene({
-  name: "A name a person would say",
-  id: "kebab-case",
-  duration: 10,
-  fps: 12,
-  grid: 360,
-  bayer: 4,
-  poster: 2,
-  background: "#ffffff",
-  light: { dir: [-0.45, -0.8], ambient: 0.3, diffuse: 0.68 },
-  ramps: { /* 3 stops each, all from one list of ≤16 colors */ },
-  params: { /* knobs. see below */ },
-  parts: [ /* back to front doesn't matter; z is in the emitter */ ],
-});
+```html
+<script type="module" src="/src/element.js"></script>
+<pocket-world src="examples/rain-bus-stop/build/manifest.json"></pocket-world>
 ```
 
-Order of work:
+It pauses off screen. Reduced motion holds t = 0.
 
-1. Sample the palette from the reference. Write the hex list in a comment. Ramps only borrow from that list. Target 16, stop at 24, white is the background and usually not a ramp stop.
-2. One `patch`. Center and radii so the vignette lands in the spec's fill (roughly 60–80% wide, 40–55% tall). `edge` is the dithered fade into white.
-3. Big shapes: `rects` on the patch for a road or a court, `slab` / `shelter` / `post` for structures.
-4. People. Scale around 0.15–0.2 reads at grid 360. Smaller and the joints vanish. Larger and they stop being a diorama.
-5. Props on joints: umbrella, rod, ball.
-6. Motion last, and only the motion the scene is about.
+## Reference
 
-`node cli/render.js compile examples/<id>/scene.js` prints every knob and writes the shader. A compile error names the line.
+The spec and the prompt live in `spec.md` and `reference-prompt.md`. Short version: 1024×1024, pure white, wide margin, 2:1 dimetric, edges dissolving into the paper, no text, no black outlines, one moment. If the still is wrong, fix the still. Prep cannot invent a gesture that was not drawn.
 
-### Coordinates
+## scene.json
 
-Screen Y grows downward. World +X goes screen right-and-down. World +Y goes screen left-and-down. Height goes up.
+Coordinates are **reference pixels**, origin top-left. Both examples are 1024.
 
-A person's `at` is their hip, in ground units. `plant: "stand"` lifts the hip by about half the scale. `plant: "seat"` uses `seatRise`, which must match the bench or the deck or they float.
+Shared `look` keys: `grid`, `K`, `kuwa`, `passes`, `haze`, `covBlur`, `spread`, `lift`, `chroma`, `saturation`, `contrast`.
 
-### Pose
+`K` is not the final count. The fitter keeps every key colour and adds centres until it has about `K - 1` scene colours. `K: 21` with 7 or 8 keys yields 20 scene colours. Rain then appends paper white and two rain tints (23 total). Laundry appends paper white only.
 
-Degrees in the character's own frame, before mirroring:
+`keyColours` is a list of `[x, y]`. Each point is the median of a 7×7 patch and is locked as a palette entry.
 
-| degrees | meaning |
+`palette`, if present, replaces k-means. Both approved examples set it. A jpeg that is a few levels off the original file will otherwise throw the k-means++ seed and repaint the dither, even when `build/base.png` is almost unchanged. Delete `palette` on a brand-new image so the fitter can run. Put it back only to lock a look you have already approved.
+
+`loopSeconds` is 12. Do not change it unless every period below is rewritten to divide the new length.
+
+### Rain
+
+`polygons` holds rings in reference pixels. `wet`, `rainZone`, `occluder`, `glow`, and `detail` are a list of rings. `umbrella`, `man`, and the unused `outline*` rings are a single ring each. `despeckle` is where painted rain streaks get a light median before the downsample, so the live rain is not fighting a second set of streaks.
+
+Also: `glowCenters` as `[x, y, radius]`, `drips` as `[x, y, fallDistance]`, `umbrellaPivot` as `[x, y]` on the hand, `manBreathTop` and `manBreathBottom` as y values, `fillPaperY` (395 on the bus stop) so the fill under the canopy is paper rather than a smear of her coat.
+
+Prep builds the textures the shader expects:
+
+| texture | channels |
 |---|---|
-| 90 | up |
-| 0 | character's right |
-| -90 | down |
+| base, fill | colour |
+| mask | R wet, G rain zone, B glow |
+| mask2 | R coverage, G detail, B outline (0 in the approved look) |
+| mask3 | R umbrella, G breath weight, B big coverage |
+| mask4 | R fill coverage |
 
-`facing: 1` looks toward screen right. `facing: -1` mirrors, and the screen angle becomes `180 - local`. A large negative local head angle on a mirrored person throws the head off the neck. For a seated bow toward screen left, keep the local head near 80 and subtract a little (`"84 - u_hisBow * 8"`), with `facing: -1`.
+Ripple centres are 40 random wet cells, seed 7. You do not place them.
 
-`armF` and `legF` are the front limbs, drawn over the body. `handF` is the prop hand. A pose field may be a number or a GLSL expression string (`"88 - u_herTurn * 0.5"`).
+### Laundry
 
-`gaze: { x, y }` shifts the eyes and nudges the head. Positive x looks to the character's right. Each component may be a param name. Around `1` is a clear look; past `1.2` the eyes leave the face.
+`cloth[]`: `name`, `poly` (4–6 points), `line` as `[x0, y0, x1, y1]` along the clothesline, `hem` in reference pixels, `amp` in cells at the hem, `phase` in radians. Neighbours differ by about 0.6–0.9.
 
-### Parts
+`still` is the occluder polygon (the woman). The sheet that passes behind her is the piece named `sheet2`: prep continues that cloth through her silhouette and the shader draws `still` back on top.
 
-| kind | what you set |
-|---|---|
-| `patch` | `center`, `radii`, `edge`, `ramp`. `water: true` makes the whole ellipse wet. `rects: [{ x, y, w, d, ramp, shade, wet }]`. One patch per scene. |
-| `slab` | deck or box. `at`, `w`, `d`, `rise`, `skirt`, `planks`, `plankAxis`, `zBias` |
-| `post` | `at`, `rise`, `half` (screen half-width), `ramp` |
-| `shelter` | `at`, `w`, `d`, `rise`, `seatRise`, ramps `roof` `iron` `wood`. Draws posts, roof, bench, eave drips. |
-| `person` | `at`, `scale`, `facing`, `plant`, `seatRise`, `colors`, `pose`, `motions`, optional `coat`, `hat`, `gaze`, `hairCover` |
-| `umbrella` | `hand: "her.handF"`, `over: "her"` so the canopy sits on the head, `radius`, `tilt`, `sway` (number, or a param name), `ramp` |
-| `lamp` | `at`, `rise`, `pool: [rx, ry]`, `streak`, `glow` (number or param, default `lampGlow`) |
-| `rain` | `density` (number or param, default `rain`), `color` hex from the palette, `angle` |
-| `ball` | `pattern: "bounce"` with `hand` and `height`, or `"cascade"` with `hands`, `phase`, `flight`. `cycles` must divide the loop cleanly. |
-| `hoop` | `at`, `rise`, ramps |
-| `rod` | `hand`, `tip: { at, rise }`, `sag`, `biteSag` (number or param), `biteFrom`, `biteTo`, `bobber` |
-| `glsl` | `phase: "ground" \| "solid" \| "overlay"`, `source`. Ground snippets see `shade`, `which`, `pix`. |
+`cat`: `poly`, `bottom`, `top`, `ear` as a 4-point rectangle.
 
-`coat: { ramp, length, flare, calves }` replaces the torso and hides the legs. `length` is a fraction of scale below the hip. `0.36` ends above the shoes, so the shoes still show. `calves: false` keeps a long coat clean.
+`shadows[]`: `piece` name, floor `poly`, `gain` (0.8).
 
-`hat: { type: "bucket" \| "cap", ramp }` is a crown and a brim, drawn under the eyes so the face survives.
+`motes`: a handful of `[x, y]`.
 
-Colors on a person are ramp names: `skin`, `hair`, `torso`, `arm`, `hand`, `thigh`, `calf`, `shoe`, `ink`.
+Cloth pixels are chosen by colour inside each polygon: light (`L > clothMinL`, default 0.62) and either low chroma (`clothMaxChroma`, default 0.042) or blue (`clothBlueChroma`, default 0.12). A median filter cleans the mask. If the sheet is the same colour as the wall, this test fails. Tighten the polygon, or loosen those three look keys. A hand polygon alone does not keep a pixel the test rejected.
 
-### Knobs
+## The shader
 
-`param(value, { min, max, step, label, doc })`. A knob does nothing until some part mentions it. The compiler keeps every uniform alive so the driver will not strip it, but alive is not the same as used.
+`src/shaders.js` is the library. Both profiles share Bayer 4×4, OKLab, value noise, and `steam()`. Rain adds `rainLayer()`. Laundry adds `breeze()`, `clothDisp()`, and `moteField()`.
 
-Ways to use one:
+What each layer does:
 
-- `amp: "calfSwing"` on a motion
-- a pose string that contains `u_herTurn`
-- `gaze: { x: "herGaze", y: 0.05 }`
-- `rain({ density: "rain" })`, `lamp` glow, `ball` `height` / `flight`, `rod` `biteSag`, `umbrella` `sway`, patch `rippleAmp` / `puddle`
+- **Rain.** Three depths, slope 0.42 (top-right to bottom-left), so streaks reach the reflections. A drop travels an integer number of cells per loop: 240, 336, 432 cells over 12 s, in slots of 20, 28, 36. `rep / slot` has to stay an integer.
+- **Shimmer.** On wet cells, noise sampled on a circle at harmonics 1, 2, 4. A lamp streak wobbles with the 2nd harmonic.
+- **Ripples.** 13 spawns per loop (every 0.92 s) plus smaller rings on a 3 s cycle. Radius eases out cubic. The ring fades with `(1 - s)²`.
+- **Drips.** Period is 6, 4, or 3 s. The bead hangs 1.1 s, then falls with gravity and leaves a splash.
+- **Glow.** Lamp colour breathes on a 6 s sine. It tints covered cells. It is not part of the paper test.
+- **Umbrella.** ±1.7° about the pivot, `sin` at 3 cycles per loop.
+- **Breath.** His shoulders, 4 s, at most about 0.45 cell, phase-shifted from the umbrella. The cat's back is 3 s (4 per loop) and about 0.38 cell. One ear flick, 0.5 s, once per loop, at t = 7.4.
+- **Cloth / foliage.** Backward map `colour(p) = layer(p − d(p))`. `d = amp · w^1.35 · breeze · n̂` plus a small upward lift of the hem. `n̂` is `normalize(vec2(-0.9, 0.45))`. Breeze is a 4 s wave travelling along the line, a 2 s harmonic, and a 12 s gust. Fold light `1 + 0.08 · w · cos(phase)` is applied before the dither. Sample bilinear, un-premultiply, `smoothstep` the alpha from 0.25 to 0.75.
+- **Shadows.** `base / S(p) · S(p − d)`, same breeze, gain about 0.8. The floor texture stays put. Only the shadow edge moves.
+- **Motes.** Closed paths, a 4 s twinkle.
+- **Steam.** `steam(p, origin, ph)` is in the shared library and is not called by either approved scene. Mix it before the quantize if a scene needs a kettle or a vent: `col = mix(col, vec3(0.93, 0.94, 0.95), steam(p, origin, ph) * 0.35 * mask)`. The rise is 4 s, so it already divides the loop.
 
-Craft knobs exist on every scene: `ambient`, `diffuse`, `lightX`, `lightY`, `shimmer`, `breath`, `reflection`, `drips`. Set them in `light` or override them in `params` (use `group: "craft"` if you want the playground to file them with the light).
+Paper test, rain: `max(coverage, dripAlpha * 0.9)` against the Bayer threshold, then a rare rain speck from the second-to-last palette entry. Laundry: coverage alone, paper is the last palette entry. The prose note "glow leaks onto the paper" is the lamp's colour mix on cells that are already covered, not a second paper test. Do not "fix" this. The approved frames were matched with the test as written.
 
-Reserved names, do not use: `time`, `grid`, `bayer`, `res`, `duration`, `origin`, `bg`.
+Time is `uT`, continuous, wrapped with `mod` to the loop. Capture sets it to `frame / 60`.
 
-### Motion
+## Motion rhythm
 
-Each motion has an integer `cycles` count per loop. The emitter uses `uTime / uDuration * TAU * cycles`. A speed like `sin(uTime * 1.7)` pops at the seam. Don't.
-
-| type | bones | notes |
+| thing | period | cycles in 12 s |
 |---|---|---|
-| `breathe` | torso, and a little on the head | also lifts the hip. Under 1° is almost still. |
-| `sway` | torso, head | |
-| `swing`, `dangle` | the `bone` you name | same motion, two names |
-| `walk` | legs and opposite arms | in place |
-| `dribble` | `armF.u` | pair its `cycles` with the ball |
-| `cast` | front arm | only between `from` and `to`, so it can end before the loop |
-| `keys` | one bone | `{ t, v, ease }` with ease `smooth` `in` `out` `bump` `linear`. At least two keys. |
+| umbrella sway, shoulder breath, cloth breath | 4 s | 3 |
+| lamp glow, drip option | 6 s | 2 |
+| cat breath, drip option | 3 s | 4 |
+| cloth harmonic, ear is shorter | 2 s | 6 |
+| main ripples | 0.923 s | 13 |
+| gust swell, the whole loop | 12 s | 1 |
 
-An event that does not wrap (a splash, a bite) must finish before `duration`, and if you compute an age use `mod(uTime - start + uDuration, uDuration)` so the window never straddles the seam.
+If you add a period, it has to divide 12. A 5 s sway will pop at the seam. Sample any noise on `vec2(cos(ph * k), sin(ph * k))` with `k` in {1, 2, 4} and `ph = TAU * t / loop`.
 
-Rain scrolls 6 cycles. Shelter and umbrella drips use a 2.5s period, puddle rings a 5s period. Both divide a 10s loop. If you change the duration, change the periods so they still divide it.
+People stay almost still. If a person is the thing bouncing, the scene is wrong.
 
-Z, if you are debugging overlap: ground is 10, objects sit near `20 + x + y`, people are `20.55 + x + y` so they win against a bench, the umbrella is 42, rain and drips paint last with no z. A shelter roof is higher than the person. If it eats a face, shrink `d` or move the sitter toward the open side. Wet ground is `mat == 2` and is the only place reflections and the lamp pool land.
+## Knobs
 
-Puddles draw on the first wet rect (layer id 2) unless the whole patch is water. Put the wet rect first.
+Change one, re-prep or re-render, look at `compare.png` and the detail strip. Do not change three at once.
 
-## 3. Render and compare
-
-Headless Chrome needs SwiftShader. `cli/render.js` already launches it that way. A favicon 404 in the console is noise.
-
-```
-node cli/render.js still examples/<id>/scene.js --time 2.4 --out /tmp/frame.png --size 720
-node cli/render.js compare examples/<id>/scene.js --time 2.4 --out /tmp/compare.png
-node cli/render.js gif examples/<id>/scene.js --out docs/<id>.gif
-node cli/render.js mp4 examples/<id>/scene.js --out docs/<id>.mp4
-```
-
-`compare` looks for `reference.png`, `reference.jpg`, or `reference.jpeg` beside the scene. Pass `--ref` to override. The reference is scaled with a soft filter and padded white. The frame stays nearest-neighbor. You are comparing composition, not pixels.
-
-Then:
-
-- Poster frame. Silhouette first: can you tell the action with the image squinting?
-- Two more times, including one near the end of the loop (`duration - 0.1`). Rain, balls, and calves should have moved. The pose should not pop.
-- People. Three tones on a coat or a sleeve, not one flat stamp. If the dark stop is missing, lower `ambient` before you add colors.
-- Reflections on wet ground should be recognizable as the thing above them, stippled, a little short, shimmering.
-- Count unique non-white colors. Over 24 means two ramps that should have shared a stop.
-
-`npm run dev` opens the playground at `http://127.0.0.1:8787/playground/`. Every param is a slider. Space pauses. Saving the scene reloads the page.
-
-## 4. When a person asks in plain language
-
-| they say | you change |
+| what you see | change |
 |---|---|
-| calves swing lazily | `calfSwing` down toward 14, `dangle` on `legF.l` and `legB.l`, integer cycles |
-| calves fidget | `calfSwing` toward 28 |
-| the reflection is too loud / too faint | `reflection`. Lower lets Bayer break it up. |
-| the puddle should be darker | `puddle` |
-| the lamp is colder | `lampGlow` up. The pool only hits wet ground. Move the lamp onto the road if the glow is sitting on grass. |
-| more rain / almost dry | `rain` |
-| she isn't looking at him | `herGaze` toward 1.1 and `herTurn` toward 14. The head string has to mention `u_herTurn` or the slider is a no-op. |
-| he should bow more | `hisBow`. Keep the local head angle near 80 on a mirrored sitter. |
-| they're too alive / too still | `breath`. The bus stop wants it under 1. |
-| the umbrella should drift | `sway: "aParam"` on the umbrella. A number is a fixed tilt bias, not a swing. `0` is still. |
-| the ball is mushy / too low | `bounce` or `flight` |
-| the rod should bend when the fish is on | `rodFlex`, and `biteSag: "rodFlex"` |
-| faces are flat | `ambient` 0.3, `diffuse` 0.68 |
-| light from the other side | `lightX` |
-| the loop pops | an oscillator whose cycle count is not an integer across `duration` |
-| the sitter is floating | `seatRise` equal to the bench or the deck rise |
-| the coat ate the shoes | `coat.length` down, around 0.36 |
-| the roof ate his head | smaller shelter `d`, or move him toward the open edge |
+| Too painterly, no cell structure | Lower `look.grid` toward 260. Do not go under ~240 or the faces melt. |
+| Greasy, big flat colour areas | Less smoothing. `kuwa` 0 or 1, `passes` 1, `haze` 0.3, `posterize` 0, `mode` 0. Never turn posterize back on to "simplify". |
+| Washed-out fold, a hero colour averaged into the wall | Add a `keyColours` point on that material. If the whole palette jumped after the jpeg was re-saved, set `palette` to the list you approved. |
+| Muddy grey mid-tones | Raise `saturation` a little, keep `chroma` at 1.1, lift with `lift` 0.9 (rain) or 0.85 (sun). |
+| Choppy, stuttering rain or cloth | Time is being stepped. It must stay continuous at 60 fps. Do not `floor(t * 12)`. |
+| Motion too strong, rubber cloth, umbrella flailing | Lower `amp` (sheets 2.5–3.5, shirts 1.6–1.8). Umbrella is `radians(1.7)` in the rain `main`. Breath is `0.45` (him) and `0.38` (cat) cells. |
+| Motion too weak, the loop looks frozen | Raise the same numbers a little. Add fold light rather than a huge `amp`. Check the mask is actually on the moving pixels. |
+| Thin post eaten by the white fringe | `covBlur` near 1. The fringe grows outward only; a bigger blur eats detail. |
+| Hole or a smear behind a moving piece | The fill did not cover the swing. Check `?t=` at max amplitude. Keep amplitudes modest: the fill is diffusion, and a large swing blurs a complex background. |
+| Cloth mask missed the blue shirt, or ate the wall | `clothMinL`, `clothMaxChroma`, `clothBlueChroma`. Then check `suggest.png`. |
+| Painted rain fighting the live rain | Put that road in `despeckle`. |
+| Seam pops | A period does not divide 12, or a noise call is not on a loop harmonic. `metrics.json` `seamCells` will sit outside the per-frame range. |
+| Dither looks like static, or bands are huge | `spread` near 0.06. Half that on figures is already applied. Do not switch to an 8×8 Bayer. The approved look is 4×4. |
+| Black contour around a shoulder or the lamp | `outline` 0 and `ink` 0. Silhouettes come from the reference's own contrast. |
 
-Add a new named param when the ask doesn't map. Wire it in the same edit. A slider that doesn't change the picture is a bug.
+## Authoring polygons
 
-## Style
+A polygon is a ring of `[x, y]` in reference pixels, clockwise or not, no need to repeat the first point.
 
-- Palette discipline. One list, ramps cut from it, Bayer does the blend.
-- 12 fps. Motion is a pose change between frames, not a blur.
-- Aliasing is the look. Hard coverage. The dither is the only softness, and it belongs in the fade to white, in shadows, in rain, in reflections.
-- White margin is part of the picture. If the vignette touches the edge, shrink `radii` or pull the camera axes in. Don't change the camera per scene unless you have a reason you can say out loud. The default 2:1 is the series.
-- Secondary motion is what makes a loop watchable: breath, a dangling calf, drips, a shimmer in the reflection. The hero bus stop is the exception on purpose. There, the people are still and the rain is the motion.
-- Volume comes from the ramp, not from more geometry. A capsule with three tones beats a stack of boxes.
+1. Run `overlay --step 64`. Every major line is labelled.
+2. For a sheet or a skirt, four to six corners is enough. Click the clothesline as `line`, and set `hem` to the pixel distance from that line down to the bottom of the cloth.
+3. For a person who only breathes, a loose box around the head and shoulders is enough (`man` on the bus stop). The weight falls from `manBreathTop` to `manBreathBottom`.
+4. For an occluder, trace the silhouette that must stay put (`still`). Err a little large rather than a little small, or a gap opens at the edge.
+5. Run `suggest` and steal key-colour points and any pale-cloth ring that already matches. Refine on the overlay. Do not trace 88 points by hand if the colour test already found the sheet.
+6. Re-prep. Open `build/cloth.png` or `build/mask3.png`. The alpha should sit on the object, not on the wall.
 
-## Detail checklist, before you call it done
+`fillPaperY`, breath limits, and hems are the numbers that are easy to get wrong by 20 pixels. The overlay is how you check them.
 
-- Secondary motion, and it survives the loop seam.
-- Contact shadows under feet, and a cast shadow where a slab hangs over water.
-- Reflections on anything marked wet. Lamp streak included, if there is a lamp.
-- A dark side and a light side on every person.
-- A silhouette you can name: coat, umbrella, bow, dangling legs.
-- Fill inside the spec. Measure the non-white bbox.
-- Palette ≤ 24, ideally around 16.
-- The poster frame and a mid-loop frame both look like the reference's idea, not like a diagram of the code.
+## Verification
 
-## Recipes
+After every change that is supposed to be finished:
 
-**Seated person, legs dangling.** `plant: "seat"`, `seatRise` matching the seat, thighs nearly horizontal (`legF: [6, -72]`), `dangle` on both lower legs with different `phase`.
+1. `compare.png` — reference on the left, t = 3 s on the right. Same scene, same gesture. Cells and dither on the right, the painting on the left. If the right-hand figure is a different person, the mask is wrong, not the dither.
+2. `contact.png` — six frames across the loop. Nothing jumps.
+3. `contact_detail.png` — four frames, 1/60 s apart, cropped on the subject. The change should crawl across the hem, the ripples, or the rain. A whole region flipping is a spike.
+4. `metrics.json` — median cells changed, max/median, seam. Rain near 0.3% of cells. A quiet scene can be ~0.06%. The seam from frame 719 to frame 0 must sit in the normal range. Then look anyway. A melted face can be perfectly seamless.
 
-**Seated person, quiet, facing someone.** Same seat. `facing: -1` if they look screen-left. Head `"84 - u_bow * 8"`. `gaze: { x: -0.4, y: "bow" }`. `breathe` at under a degree if the scene is a held moment.
+The approved bus stop, measured on its MP4 at 260² with an RGB sum threshold of 40, is median 210 cells/frame (0.31%), max/median 1.44, seam 185. The rooftop is median 43 (0.06%), seam 37. Match the character of those numbers, not a single digit, and match the frames.
 
-**Someone standing under an umbrella, looking at the sitter.** `facing: 1` if the sitter is screen-right. Arms `armF: [18, 55]` so the hand is up. `umbrella({ hand: "her.handF", over: "her", tilt: -0.22, sway: 0 })`. Gaze x is a param defaulting near 1.1.
+## Anti-patterns
 
-**Wet road and a lamp.** Patch of grass, first rect a wet road, second rect a dry pad under the shelter so the interior doesn't mirror. Lamp `at` on the road, `pool` wide enough to reach the figures' reflections. `reflection` near 0.9 when the reflection is the point of the picture.
+- Drawing the figure in the shader. The reference already drew it.
+- Black outlines, posterize, mode filter, Kuwahara radius above 2.
+- Stepped animation. 12 fps rain looks choppy even when the loop is seamless.
+- An 8×8 Bayer. Finer matrix, different grain. The locked look is 4×4.
+- A palette bigger than 24 including paper, or smaller than about 16 scene colours.
+- Amplitudes past ~3.5 cells. Cloth becomes rubber. The fill turns to mush.
+- A new uniform that nothing sets. WebGL leaves it at 0 and the layer dies.
+- Committing someone else's videos, or the study clips. Renders from this repo are fine.
+- Copying the archived SDF rig back into `src/`.
 
-**A bite on a line.** Bobber `dipFrom` / `dipTo` inside the loop. `biteSag` on the rod for the same window. A ground `glsl` snippet draws rings with `mod(uTime - start + uDuration, uDuration)`. An overlay snippet draws the splash for a few tenths of a second and then stops. Fish `bite` times match. See `examples/fishing/scene.js`.
+## Known limits
 
-**A dribble.** Ball `cycles` and the dribble motion `cycles` are the same integer. `height: "bounce"`.
+- The cloth mask is a colour test. Cloth that matches its background needs a hand mask and usually a looser threshold, and even then a pixel the test rejects is gone.
+- The fill is iterated neighbour diffusion. It is invisible when motion is small. A large swing over a detailed wall will look soft. Keep the amplitude modest instead of writing a smarter inpaint.
+- Folds are baked into the cloth layer. They travel with the warp. They do not re-form.
+- k-means++ is seed-stable only for a bit-identical source. A re-saved jpeg can reshuffle clusters. Lock `palette` once the look is approved.
+- The shader's palette array is 24. Prep refuses a longer list.
 
-**A cascade.** Three balls, `phase` 0, 0.333, 0.666, same `cycles` as the arm swings, opposite phase on the two arms. `flight: "flight"`.
-
-## Gotchas already paid for
-
-These failed once. They will fail again if you don't look.
-
-- `half` is a reserved word in the shader. So are `sample`, `input`, `output`, `filter`. The post helper's half-width is `halfW`.
-- Ambient at 0.48 plus a 3-stop ramp never selects the dark stop. Figures go flat. Use ~0.3.
-- Mirrored head angles are not "the number you picture". Use the bow recipe.
-- An umbrella without `over` hangs off the hand and reads as a cane.
-- A param that nothing references does not move. Pose strings and the string fields on ball, rod, rain, lamp, gaze, and sway are the hooks.
-- Shimmer, rain, bob, and breath must be integer cycles. `sin(uTime * 1.7)` looks fine until the loop restarts.
-- One patch. Extra materials are rects. The wet one goes first if you want puddles.
-- `seatRise` is absolute, not a fraction of the person.
-- Coat length is below the hip, in fractions of scale.
-- Node cannot load `src/element.js` (it registers a custom element). Scenes import `src/scene.js` only. The render page imports `src/player.js`.
-- Chrome without SwiftShader reports no WebGL2. Use the CLI, don't invent a new launcher.
-- Concept JPEGs are fuller and smoother than the spec. Conform. Don't chase the JPEG's anti-aliasing.
-
-## Where things live
+## Files
 
 | path | role |
 |---|---|
-| `src/scene.js` | the authoring API |
-| `src/compile.js` | scene → fragment shader |
-| `src/glsl.js` | SDF, Bayer, ramps, camera |
-| `src/player.js` | `mount(canvas, spec)` |
-| `src/element.js` | `<pocket-world src="...">` |
-| `src/spec.js` | the numbers |
-| `cli/render.js` | still, gif, mp4, frames, compare, gallery |
-| `cli/dev.js` | playground |
-| `examples/*/scene.js` | the worlds |
-| `examples/*/reference.jpg` | the still you built from |
-| `docs/` | rendered gif and mp4 |
+| `tools/pocketworld.py` | prep, overlay, suggest, contact sheet, metric |
+| `cli/pocketworld.js` | `prep`, `render`, `overlay`, `suggest`, `dev` |
+| `src/shaders.js` | motion layers and the two composites |
+| `src/player.js` | `mount(canvas, manifestUrl)` |
+| `src/element.js` | `<pocket-world>` |
+| `examples/rain-bus-stop` | approved rain scene |
+| `examples/rooftop-laundry` | approved cloth scene |
+| `experimental/sdf/` | retired procedural figures |

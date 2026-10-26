@@ -1,101 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>pocketworld</title>
-  <style>
-    :root { color-scheme: light; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; background: #fff; color: #1c1915; }
-    body {
-      font: 15px/1.45 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
-      min-height: 100vh;
-    }
-    header {
-      display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap;
-      padding: 18px 22px 0;
-    }
-    h1 { font-size: 22px; font-weight: 500; margin: 0; letter-spacing: -0.02em; }
-    header p { margin: 0; color: #5c564c; }
-    main {
-      display: grid;
-      grid-template-columns: minmax(280px, 1fr) 320px;
-      gap: 8px;
-      padding: 12px 18px 28px;
-      align-items: start;
-    }
-    @media (max-width: 800px) {
-      main { grid-template-columns: 1fr; }
-    }
-    canvas {
-      width: min(100%, 720px);
-      height: auto;
-      aspect-ratio: 1;
-      image-rendering: pixelated;
-      background: #fff;
-      display: block;
-    }
-    .stage { padding: 8px; }
-    .transport {
-      display: flex; gap: 10px; align-items: center;
-      padding: 4px 8px 0;
-      font: 13px/1.3 ui-sans-serif, system-ui, sans-serif;
-    }
-    .transport button {
-      font: inherit; background: #1c1915; color: #fff;
-      border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer;
-    }
-    .transport input[type="range"] { flex: 1; }
-    .transport span { min-width: 7ch; color: #5c564c; font-variant-numeric: tabular-nums; }
-    aside {
-      font: 13px/1.35 ui-sans-serif, system-ui, sans-serif;
-      padding: 8px 8px 24px;
-      max-height: calc(100vh - 70px);
-      overflow: auto;
-    }
-    label.row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin: 0 0 10px; }
-    label.row input { grid-column: 1 / -1; width: 100%; }
-    label.row b { font-weight: 600; }
-    label.row em { font-style: normal; color: #5c564c; font-variant-numeric: tabular-nums; }
-    label.row small { grid-column: 1 / -1; color: #6e675c; }
-    h2 { font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8175; margin: 16px 0 8px; }
-    select, input[type="number"] {
-      font: inherit; background: #fff; border: 1px solid #d9d3c7; border-radius: 6px; padding: 4px 6px;
-    }
-    .meta { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .meta label { display: flex; gap: 6px; align-items: center; }
-    #status { color: #8a1e1e; white-space: pre-wrap; }
-  </style>
+<meta charset="utf-8">
+<title>pocketworld</title>
+<style>
+  :root { color: #243038; font: 16px/1.45 Georgia, "Iowan Old Style", serif; }
+  body { margin: 0; background: #fff; }
+  header { max-width: 880px; margin: 0 auto; padding: 28px 20px 0; }
+  h1 { font-weight: 500; font-size: 28px; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  a { color: inherit; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 1100px; margin: 0 auto; padding: 12px 20px 48px; }
+  figure { margin: 0; }
+  figcaption { padding: 8px 2px 0; font-size: 15px; }
+  @media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
-  <header>
-    <h1>pocketworld</h1>
-    <p>One shader, a short palette, a loop. Drag a knob.</p>
-  </header>
-  <main>
-    <div>
-      <div class="stage"><canvas id="c" width="720" height="720"></canvas></div>
-      <div class="transport">
-        <button id="play" type="button">Pause</button>
-        <input id="scrub" type="range" min="0" max="1" step="0.01" value="0" />
-        <span id="clock">0.00</span>
-      </div>
-    </div>
-    <aside>
-      <div class="meta">
-        <select id="scene"></select>
-      </div>
-      <div class="meta">
-        <label>grid <input id="grid" type="number" min="80" max="720" step="20" value="360" /></label>
-        <label>bayer
-          <select id="bayer"><option value="4">4×4</option><option value="8">8×8</option></select>
-        </label>
-      </div>
-      <div id="knobs"></div>
-      <p id="status"></p>
-    </aside>
-  </main>
-  <script type="module" src="./main.js"></script>
+<header>
+  <h1>pocketworld</h1>
+  <p>A reference painting, rebuilt as a few dozen colours, then left to breathe. <a href="https://x.com/zzzzshawn">shawn</a> is the reason it looks like this.</p>
+</header>
+<div class="row">
+  <figure>
+    <pocket-world src="/examples/rain-bus-stop/build/manifest.json"></pocket-world>
+    <figcaption>Rain at the bus stop. Twelve seconds, then it is twelve seconds again.</figcaption>
+  </figure>
+  <figure>
+    <pocket-world src="/examples/rooftop-laundry/build/manifest.json"></pocket-world>
+    <figcaption>Rooftop laundry. The sheets have the wind. The cat has a breath.</figcaption>
+  </figure>
+</div>
+<script type="module" src="/src/element.js"></script>
 </body>
 </html>
