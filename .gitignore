@@ -1,0 +1,6 @@
+node_modules/
+tmp/
+frames/
+*.log
+.DS_Store
+.shader-debug.frag

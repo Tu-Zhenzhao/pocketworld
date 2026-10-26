@@ -1,0 +1,19 @@
+{
+  "name": "pocketworld",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny zero-dependency toolkit for looping isometric pocket-world animations, drawn by one WebGL2 shader.",
+  "scripts": {
+    "dev": "node cli/dev.js",
+    "start": "node cli/dev.js",
+    "render": "node cli/render.js"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.15.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
