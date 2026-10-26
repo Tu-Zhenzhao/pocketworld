@@ -249,4 +249,10 @@ float ellipseCov(vec2 g, vec2 center, vec2 radii, float edgeAmp) {
   float e = length(d) + (fbm(g * 3.1) - 0.5) * edgeAmp;
   return smoothstep(1.04, 0.78, e);
 }
+float slabCov(vec2 g, vec2 origin, vec2 size, float edge) {
+  vec2 q = abs(g - (origin + size * 0.5)) - size * 0.5;
+  float dist = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0);
+  dist += (fbm(g * 3.4) - 0.5) * edge * 0.7;
+  return 1.0 - smoothstep(0.0, max(edge, 0.001), dist);
+}
 `;

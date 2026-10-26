@@ -164,9 +164,9 @@ function mergeParams(spec) {
 function limbTests(id, a, b, r, ramp) {
   return `
   d = hitCapsule(p, ${a}, ${b}, ${r}, n, h);
-  if (d >= 0.0) return ${rampCall(ramp, "shadeForm(n) * jointAO(h)")};
+  if (d >= 0.0) return ${rampCall(ramp, "(shadeForm(n) * lit) * jointAO(h)")};
   d = hitDisc(p, ${b}, ${r} * 1.15, n);
-  if (d >= 0.0) return ${rampCall(ramp, "shadeForm(n)")};`;
+  if (d >= 0.0) return ${rampCall(ramp, "shadeForm(n) * lit")};`;
 }
 
 function emitPerson(part, ctx) {
@@ -204,6 +204,7 @@ function emitPerson(part, ctx) {
   const hairCover = part.hairCover ?? 0.5;
   const coatLen = part.coat?.length ?? 0.5;
   const flare = part.coat?.flare ?? 1.35;
+  const shoulderMul = part.coat?.shoulder ?? 1;
   const showCalves = !coat || part.coat.calves !== false;
   const showThighs = !coat;
 
@@ -259,40 +260,42 @@ void pose_${id}() {
   ${id}_head += vec2(gaze.x * 0.35, gaze.y * 0.85);
   ${id}_coatTop = sh;
   ${id}_coatBot = ${id}_hip + vec2(0.0, ${id}_sc * ${num(coatLen)});
-  ${id}_rCoat0 = ${id}_sc * ${num(P.rTorso)};
+  ${id}_rCoat0 = ${id}_sc * ${num(P.rTorso * shoulderMul)};
   ${id}_rCoat1 = ${id}_rCoat0 * ${num(flare)};
 }
 
-vec3 sample_${id}(vec2 p, float th) {
+vec3 sample_${id}_lit(vec2 p, float th, float lit);
+vec3 sample_${id}(vec2 p, float th) { return sample_${id}_lit(p, th, 1.0); }
+vec3 sample_${id}_lit(vec2 p, float th, float lit) {
   vec2 n; float h; float d;
   vec2 gaze = vec2(${gx}, ${gy}) * ${id}_headR * 0.45;
   vec2 eyeA = ${id}_head + vec2(-${id}_headR * 0.28, ${id}_headR * 0.18) + gaze;
   vec2 eyeB = ${id}_head + vec2(${id}_headR * 0.26, ${id}_headR * 0.14) + gaze;
   if (length(p - eyeA) < ${id}_eyeR || length(p - eyeB) < ${id}_eyeR) return ${V(ink, 0)};
-  ${hat ? hatTests(id, hat) : ""}
+  ${hat ? (part.hat.type === "hood" ? hoodTests(id, hat) : hatTests(id, hat)) : ""}
   if (length(p - ${id}_head) < ${id}_headR) {
     float cut = ${id}_head.y - ${id}_headR + 2.0 * ${id}_headR * ${num(hairCover)};
     vec2 hn = (p - ${id}_head) / ${id}_headR;
-    if (p.y < cut) return ${rampCall(hair, "mix(0.45, 0.9, shadeForm(hn))")};
-    return ${rampCall(skin, "shadeForm(hn)")};
+    if (p.y < cut) return ${rampCall(hair, "mix(0.35, 0.85, shadeForm(hn)) * lit")};
+    return ${rampCall(skin, "shadeForm(hn) * lit")};
   }
   d = hitDisc(p, ${id}_handF, ${id}_rHand, n);
-  if (d >= 0.0) return ${rampCall(hand, "shadeForm(n)")};
+  if (d >= 0.0) return ${rampCall(hand, "shadeForm(n) * lit")};
   ${limbTests(id, `${id}_shF`, `${id}_elF`, `${id}_rArm`, arm)}
   ${limbTests(id, `${id}_elF`, `${id}_handF`, `${id}_rArm * 0.86`, arm)}
-  ${shoeTest(id, "F", shoe)}
+  ${shoeTest(id, "F", shoe, !!part.boots)}
   ${showCalves ? limbTests(id, `${id}_knF`, `${id}_footF`, `${id}_rCalf`, calf) : ""}
   ${showThighs ? limbTests(id, `${id}_hipF`, `${id}_knF`, `${id}_rThigh`, thigh) : ""}
   ${coat ? `
   d = hitTaper(p, ${id}_coatTop, ${id}_coatBot, ${id}_rCoat0, ${id}_rCoat1, n, h);
-  if (d >= 0.0) return ${rampCall(coat, "shadeForm(n) * mix(1.0, 0.82, h)")};` : `
+  if (d >= 0.0) return ${rampCall(coat, "(shadeForm(n) * lit) * mix(1.0, 0.42, smoothstep(0.78, 0.97, h))")};` : `
   d = hitTaper(p, mix(${id}_hip, ${id}_coatTop, 0.35), ${id}_coatTop, ${id}_sc * ${num(P.rTorso)}, ${id}_sc * ${num(P.rTorso * 0.72)}, n, h);
-  if (d >= 0.0) return ${rampCall(torso, "shadeForm(n) * jointAO(h)")};`}
+  if (d >= 0.0) return ${rampCall(torso, "(shadeForm(n) * lit) * jointAO(h)")};`}
   d = hitDisc(p, ${id}_handB, ${id}_rHand * 0.9, n);
-  if (d >= 0.0) return ${rampCall(hand, "shadeForm(n)")};
+  if (d >= 0.0) return ${rampCall(hand, "shadeForm(n) * lit")};
   ${limbTests(id, `${id}_shB`, `${id}_elB`, `${id}_rArm * 0.92`, arm)}
   ${limbTests(id, `${id}_elB`, `${id}_handB`, `${id}_rArm * 0.8`, arm)}
-  ${shoeTest(id, "B", shoe)}
+  ${shoeTest(id, "B", shoe, !!part.boots)}
   ${showCalves ? limbTests(id, `${id}_knB`, `${id}_footB`, `${id}_rCalf * 0.92`, calf) : ""}
   ${showThighs ? limbTests(id, `${id}_hipB`, `${id}_knB`, `${id}_rThigh * 0.92`, thigh) : ""}
   return vec3(-1.0);
@@ -307,10 +310,12 @@ vec3 sample_${id}(vec2 p, float th) {
   ctx.reflect.push(`
     if (pix.mat == 2) {
       vec2 foot = ${id}_footF.y > ${id}_footB.y ? ${id}_footF : ${id}_footB;
-      vec2 rp = reflectPoint(pix.p, foot, 0.84);
+      vec2 rp = reflectPoint(pix.p, foot, 0.78);
       if (rp.x > -5.0) {
-        vec3 rc = sample_${id}(rp, pix.th);
-        if (rc.x >= 0.0 && u_reflection + 0.18 > pix.th) pix.rgb = rc;
+        vec3 rc = sample_${id}_lit(rp, pix.th, 0.4);
+        float rip = sin(pix.p.y * 92.0 + pix.p.x * 16.0 + uTime / uDuration * 6.2831853 * 3.0);
+        float hole = hash21(pix.cell);
+        if (rc.x >= 0.0 && rip < 0.62 && hole < 0.82 && u_reflection > pix.th) pix.rgb = rc;
       }
     }`);
   ctx.people.push(id);
@@ -322,7 +327,7 @@ function hatTests(id, hat) {
     vec2 crown = ${id}_head + vec2(0.0, -${id}_headR * 0.62);
     if (length(p - crown) < ${id}_headR * 0.92) {
       vec2 hn = (p - crown) / (${id}_headR * 0.92);
-      return ${rampCall(hat, "shadeForm(hn)")};
+      return ${rampCall(hat, "shadeForm(hn) * lit")};
     }
     vec2 bp = p - (${id}_head + vec2(0.0, -${id}_headR * 0.08));
     if (length(bp / vec2(${id}_headR * 1.55, ${id}_headR * 0.42)) < 1.0 && bp.y > -${id}_headR * 0.08) {
@@ -330,16 +335,34 @@ function hatTests(id, hat) {
     }
   }`;
 }
-function shoeTest(id, side, shoe) {
+function hoodTests(id, hat) {
+  return `
+  {
+    vec2 hp = p - ${id}_head;
+    float hood = length(hp / vec2(${id}_headR * 1.34, ${id}_headR * 1.28));
+    vec2 cp = p - (${id}_head + vec2(0.0, ${id}_headR * 0.9));
+    float cowl = length(cp / vec2(${id}_headR * 1.2, ${id}_headR * 0.62));
+    bool opening = hp.y > -${id}_headR * 0.02 && abs(hp.x) < ${id}_headR * 0.78 && hp.y < ${id}_headR * 1.05;
+    if (!opening && hood < 1.0) {
+      return ${rampCall(hat, `shadeForm(hp / (${id}_headR * 1.3)) * lit * 0.92`)};
+    }
+    if (!opening && cowl < 1.0 && cp.y > -${id}_headR * 0.15) {
+      return ${rampCall(hat, "0.28 * lit")};
+    }
+  }`;
+}
+function shoeTest(id, side, shoe, boot) {
   const foot = `${id}_foot${side}`;
   const knee = `${id}_kn${side}`;
+  const reach = boot ? 0.085 : 0.05;
+  const rad = boot ? 0.036 : 0.022;
   return `
   {
     vec2 shin = ${foot} - ${knee};
     float sl = length(shin);
-    vec2 toe = ${foot} + (sl > 1e-5 ? shin / sl : vec2(0.0, 1.0)) * ${id}_sc * 0.05;
-    d = hitCapsule(p, ${foot}, toe, ${id}_sc * 0.02, n, h);
-    if (d >= 0.0) return ${rampCall(shoe, "shadeForm(n)")};
+    vec2 toe = ${foot} + (sl > 1e-5 ? shin / sl : vec2(0.0, 1.0)) * ${id}_sc * ${num(reach)};
+    d = hitCapsule(p, ${foot}, toe, ${id}_sc * ${num(rad)}, n, h);
+    if (d >= 0.0) return ${rampCall(shoe, "shadeForm(n) * lit")};
   }`;
 }
 
@@ -361,25 +384,34 @@ function emitUmbrella(part, ctx) {
 vec2 ${id}_canopy;
 void pose_${id}() {
   float tilt = ${num(tilt)} + (${sway});
-  ${id}_canopy = ${over} + vec2(sin(tilt) * ${num(rx * 0.25)}, -${num(ry * 0.85)});
+  ${id}_canopy = ${over} + vec2(sin(tilt) * ${num(rx * 0.15)}, -${num(ry * 1.2)});
 }
-vec3 sample_${id}(vec2 p, float th) {
+vec3 sample_${id}_lit(vec2 p, float th, float lit);
+vec3 sample_${id}(vec2 p, float th) { return sample_${id}_lit(p, th, 1.0); }
+vec3 sample_${id}_lit(vec2 p, float th, float lit) {
   float tilt = ${num(tilt)} + (${sway});
   float ca = cos(tilt), sa = sin(tilt);
   vec2 dlt = p - ${id}_canopy;
   dlt = vec2(ca * dlt.x + sa * dlt.y, -sa * dlt.x + ca * dlt.y);
-  float e = length(dlt / vec2(${num(rx)}, ${num(ry)}));
-  if (e <= 1.0) {
-    float shade = shadeForm(vec2(dlt.x / ${num(rx)}, dlt.y / ${num(ry)}));
-    if (e > 0.8) shade *= 0.5;
+  vec2 rad = vec2(${num(rx)}, ${num(ry)});
+  float e = length(dlt / rad);
+  if (e <= 1.02) {
+    vec2 n2 = dlt / rad;
+    float dome = sqrt(max(0.0, 1.0 - dot(n2, n2)));
+    float shade = shadeForm(vec2(n2.x, n2.y - 0.45 * dome)) * lit;
+    shade *= mix(1.0, 0.72, dome);
+    float ang = atan(dlt.y, dlt.x);
+    float rib = abs(fract(ang * ${num(6 / (Math.PI * 2))} + 0.5) - 0.5);
+    if (rib < 0.04 && e > 0.18 && e < 0.92) shade *= 0.42;
+    if (e > 0.84) shade *= 0.32;
     vec2 n; float h;
-    if (hitCapsule(p, ${id}_canopy, ${id}_canopy + vec2(0.0, ${num(ry * 0.2)}), 0.55 / uGrid, n, h) >= 0.0) {
+    if (e < 0.12 && hitDisc(p, ${id}_canopy, ${num(Math.max(rx, ry) * 0.08)}, n) >= 0.0) {
       return ${V(ink, 0)};
     }
     return ${rampCall(ramp, "shade")};
   }
   vec2 n; float h;
-  if (hitCapsule(p, ${joint}, ${id}_canopy, 0.7 / uGrid, n, h) >= 0.0) return ${V(ink, 0)};
+  if (hitCapsule(p, ${joint}, ${id}_canopy, 1.15 / uGrid, n, h) >= 0.0) return ${V(ink, 0)};
   return vec3(-1.0);
 }
 `);
@@ -388,10 +420,11 @@ vec3 sample_${id}(vec2 p, float th) {
   ctx.reflect.push(`
     if (pix.mat == 2) {
       vec2 foot = ${who}_footF.y > ${who}_footB.y ? ${who}_footF : ${who}_footB;
-      vec2 rp = reflectPoint(pix.p, foot, 0.9);
+      vec2 rp = reflectPoint(pix.p, foot, 0.82);
       if (rp.x > -5.0) {
-        vec3 rc = sample_${id}(rp, pix.th);
-        if (rc.x >= 0.0 && u_reflection + 0.18 > pix.th) pix.rgb = rc;
+        vec3 rc = sample_${id}_lit(rp, pix.th, 0.42);
+        float rip = sin(pix.p.y * 92.0 + pix.p.x * 16.0 + uTime / uDuration * 6.2831853 * 3.0);
+        if (rc.x >= 0.0 && rip < 0.62 && hash21(pix.cell) < 0.82 && u_reflection > pix.th) pix.rgb = rc;
       }
     }`);
   if (part.drips !== false) {
@@ -414,7 +447,24 @@ function emitShelter(part, ctx) {
   const x = at[0];
   const y = at[1];
   const seat = part.seatRise ?? 0.046;
-  ctx.solid.push(`
+  const arch = part.arch ?? 0;
+  const glass = part.glass ? useRamp(ctx.spec, part.glass) : null;
+  if (arch > 0) {
+    const bands = 8;
+    for (let i = 0; i < bands; i++) {
+      const t0 = i / bands;
+      const t1 = (i + 1) / bands;
+      const h0 = rise + Math.sin(Math.PI * (t0 + t1) * 0.5) * arch;
+      ctx.solid.push(`drawIsoBox(pix,
+        vec2(${num(x - over + (w + over * 2) * t0)}, ${num(y - over)}),
+        vec2(${num(x - over + (w + over * 2) * t1)}, ${num(y + d + over)}),
+        ${num(h0)}, ${num(Math.max(part.roofThick ?? 0.02, arch / bands + 0.012))},
+        ${V(roof, 0)}, ${V(roof, 1)}, ${V(roof, 2)},
+        ${V(roof, 0)}, ${V(iron, 0)}, ${V(iron, 1)},
+        0.0, 0.0, ${num(22.2 + x + y + h0)});`);
+    }
+  } else {
+    ctx.solid.push(`
     drawIsoBox(pix,
       vec2(${num(x - over)}, ${num(y - over)}),
       vec2(${num(x + w + over)}, ${num(y + d + over)}),
@@ -422,6 +472,37 @@ function emitShelter(part, ctx) {
       ${V(roof, 0)}, ${V(roof, 1)}, ${V(roof, 2)},
       ${V(roof, 0)}, ${V(iron, 0)}, ${V(iron, 1)},
       0.0, 0.0, ${num(20.4 + x + y + w + d)});`);
+  }
+  if (glass) {
+    const panels = [
+      [x, y, x + w, y],
+      [x, y, x, y + d],
+      [x + w, y, x + w, y + d],
+    ];
+    for (const [ax, ay, bx, by] of panels) {
+      ctx.solid.push(`
+      {
+        vec2 a = toScreen(vec2(${num(ax)}, ${num(ay)}), 0.012);
+        vec2 b = toScreen(vec2(${num(bx)}, ${num(by)}), 0.012);
+        vec2 c = toScreen(vec2(${num(ax)}, ${num(ay)}), ${num(rise * 0.92)});
+        vec2 ab = b - a;
+        vec2 ac = c - a;
+        vec2 ap = pix.p - a;
+        float det = ab.x * ac.y - ab.y * ac.x;
+        if (abs(det) > 1e-6) {
+          float u = (ap.x * ac.y - ap.y * ac.x) / det;
+          float v = (ab.x * ap.y - ab.y * ap.x) / det;
+          if (u >= 0.0 && u <= 1.0 && v >= 0.0 && v <= 1.0) {
+            float shade = 0.62 + (v > 0.55 ? 0.22 : 0.0);
+            float streak = fract(u * 11.0 - v * 1.6 - uTime / uDuration * 2.0);
+            if (streak < 0.07) shade = 0.96;
+            if (u < 0.045 || u > 0.955 || v < 0.04 || v > 0.96 || abs(fract(u * 3.0) - 0.5) > 0.46) shade = 0.16;
+            cover(pix, ${num(19.2 + ax + ay)}, ${rampCall(glass, "shade", "pix.th")});
+          }
+        }
+      }`);
+    }
+  }
   for (const [cx, cy] of [[x, y], [x + w, y], [x, y + d], [x + w, y + d]]) {
     ctx.solid.push(`drawPost(pix, vec2(${num(cx)}, ${num(cy)}), 0.0, ${num(rise)}, ${num(part.postHalf ?? 0.0042)}, ${V(iron, 0)}, ${V(iron, 1)}, ${V(iron, 2)}, ${num(20.1 + cx + cy)});`);
   }
@@ -470,27 +551,31 @@ function emitLamp(part, ctx) {
       vec2 base = toScreen(vec2(${num(at[0])}, ${num(at[1])}), ${num(rise)});
       vec2 head = lamp_${id}_head;
       vec2 n; float h;
-      if (hitCapsule(pix.p, base, head, 0.65 / uGrid, n, h) >= 0.0) cover(pix, ${num(z + 0.2)}, ${V(iron, 1)});
-      if (hitDisc(pix.p, head + vec2(0.0, -0.007), 0.0075, n) >= 0.0) cover(pix, ${num(z + 0.4)}, ${V(iron, 0)});
-      if (hitDisc(pix.p, head, 0.0105, n) >= 0.0) cover(pix, ${num(z + 0.35)}, ${rampCall(glow, "0.9", "pix.th")});
+      if (hitCapsule(pix.p, base, head, 0.7 / uGrid, n, h) >= 0.0) cover(pix, ${num(z + 0.2)}, ${V(iron, 1)});
+      float hd = length(pix.p - head);
+      if (hd < 0.036 && hd > 0.016 && ${glowE} * 0.9 > pix.th) cover(pix, ${num(z + 0.3)}, ${V(glow, 1)});
+      if (hitDisc(pix.p, head + vec2(0.0, -0.014), 0.012, n) >= 0.0) cover(pix, ${num(z + 0.5)}, ${V(iron, 0)});
+      if (hitDisc(pix.p, head, 0.016, n) >= 0.0) cover(pix, ${num(z + 0.45)}, ${V(glow, Math.min(2, glow.length - 1))});
+      if (hitDisc(pix.p, head + vec2(0.0, 0.004), 0.011, n) >= 0.0) cover(pix, ${num(z + 0.42)}, ${V(glow, 1)});
     }`);
   ctx.afterGround.push(`
-    if (pix.mat == 2) {
+    if (pix.mat > 0) {
       float d = length((pix.g - vec2(${num(at[0])}, ${num(at[1])})) / vec2(${num(pool[0])}, ${num(pool[1])}));
       float fall = clamp(1.0 - d, 0.0, 1.0);
       fall = fall * fall * ${glowE};
-      if (fall > pix.th) pix.rgb = fall > 0.55 ? ${V(glow, Math.min(2, glow.length - 1))} : ${V(glow, 1)};
+      if (fall > pix.th * 0.55) pix.rgb = fall > 0.48 ? ${V(glow, Math.min(2, glow.length - 1))} : ${V(glow, 1)};
     }`);
   ctx.reflect.push(`
     if (pix.mat == 2) {
       vec2 head = lamp_${id}_head;
       float dy = pix.p.y - head.y;
-      float wob = sin(pix.p.y * 130.0 + uTime / uDuration * 6.2831853 * 3.0) * (1.3 / uGrid) * u_shimmer;
-      float nx = abs(pix.p.x - head.x + wob) / (0.011 + max(dy, 0.0) * 0.32);
+      float wob = sin(pix.p.y * 80.0 + uTime / uDuration * 6.2831853 * 3.0) * (2.2 / uGrid) * u_shimmer;
+      float nx = abs(pix.p.x - head.x + wob) / (0.018 + max(dy, 0.0) * 0.2);
       float ny = dy / ${num(part.streak ?? 0.15)};
-      if (dy > 0.0 && nx < 1.0 && ny < 1.0) {
+      if (dy > 0.004 && nx < 1.0 && ny < 1.0) {
         float a = (1.0 - ny) * (1.0 - nx) * ${glowE};
-        if (a > pix.th) pix.rgb = ${V(glow, 1)};
+        float brk = sin(pix.p.y * 70.0 + uTime / uDuration * 6.2831853 * 3.0);
+        if (a > pix.th * 0.45 && brk < 0.72) pix.rgb = ny < 0.45 ? ${V(glow, Math.min(2, glow.length - 1))} : ${V(glow, 1)};
       }
     }`);
 }
@@ -505,18 +590,24 @@ function emitRain(part, ctx) {
     throw new Error('rain uses u_rain. Add params.rain, or set rain.density to a number.');
   }
   const angle = part.angle ?? 0.4;
+  const columns = part.columns ?? 52;
+  const thick = part.thick ?? 0.18;
+  const len = part.len ?? 0.14;
+  const slab = patch?.slab;
+  const vig = slab
+    ? `slabCov(pix.g, vec2(${num(slab.x)}, ${num(slab.y)}), vec2(${num(slab.w)}, ${num(slab.d)}), ${num(patch.edge ?? 0.05)})`
+    : `smoothstep(1.2, 0.55, length((pix.g - vec2(${num(c[0])}, ${num(c[1])})) / max(vec2(${num(r[0])}, ${num(r[1])}), vec2(0.001))))`;
   ctx.overlay.push(`
     {
-      vec2 rad = vec2(${num(r[0])}, ${num(r[1])});
-      float vig = smoothstep(1.2, 0.55, length((pix.g - vec2(${num(c[0])}, ${num(c[1])})) / max(rad, vec2(0.001))));
+      float vig = ${vig};
       vec2 dirv = normalize(vec2(${num(angle)}, 1.0));
       vec2 nrm = vec2(-dirv.y, dirv.x);
       float across = dot(pix.p, nrm);
       float along = dot(pix.p, dirv);
-      float id = floor(across * 52.0);
+      float id = floor(across * ${num(columns)});
       float h = hash11(id);
-      float f = fract(along * 9.0 - (uTime / uDuration) * 6.0 - h);
-      if (fract(across * 52.0) < 0.18 && h < 0.5 * ${dens} && f < 0.14 && vig > pix.th) pix.rgb = ${col};
+      float f = fract(along * ${num(part.along ?? 14)} - (uTime / uDuration) * 6.0 - h);
+      if (fract(across * ${num(columns)}) < ${num(thick)} && h < 0.62 * ${dens} && f < ${num(len)} && vig > pix.th) pix.rgb = ${col};
     }`);
 }
 
@@ -736,6 +827,7 @@ function emitGround(ctx) {
   }
   let puddles = "";
   const rippleE = part.rippleAmp == null ? "0.0" : typeof part.rippleAmp === "string" ? `u_${part.rippleAmp}` : num(part.rippleAmp);
+  const rippleGain = part.rippleGain ?? 0.55;
   const puddleE = part.puddle == null ? "0.65" : typeof part.puddle === "string" ? `u_${part.puddle}` : num(part.puddle);
   const period = part.ripplePeriod ?? 5;
   for (const [i, pd] of (part.puddles || []).entries()) {
@@ -745,7 +837,7 @@ function emitGround(ctx) {
         float pe = length((pix.p - pc) / vec2(${num(pd.r?.[0] ?? 0.06)}, ${num(pd.r?.[1] ?? 0.034)}));
         if (pe < 1.15 && (which == 2 || ${allWet ? "true" : "false"})) {
           shade -= (1.0 - clamp(pe, 0.0, 1.0)) * ${num(pd.dark ?? 0.2)} * ${puddleE};
-          shade += rings(pix.p, pc, ${num(period)}, ${num(pd.phase ?? i * 1.6)}, ${num(pd.reach ?? 0.05)}) * ${rippleE} * 0.55;
+          shade += rings(pix.p, pc, ${num(period)}, ${num(pd.phase ?? i * 1.6)}, ${num(pd.reach ?? 0.05)}) * ${rippleE} * ${num(rippleGain)};
         }
       }`;
   }
@@ -778,7 +870,9 @@ function emitGround(ctx) {
   return `
 ${fishFn}
 void paint_ground(inout Pix pix) {
-  float cov = ellipseCov(pix.g, vec2(${num(center[0])}, ${num(center[1])}), vec2(${num(radii[0])}, ${num(radii[1])}), ${num(edge)});
+  float cov = ${part.slab
+    ? `slabCov(pix.g, vec2(${num(part.slab.x)}, ${num(part.slab.y)}), vec2(${num(part.slab.w)}, ${num(part.slab.d)}), ${num(edge)})`
+    : `ellipseCov(pix.g, vec2(${num(center[0])}, ${num(center[1])}), vec2(${num(radii[0])}, ${num(radii[1])}), ${num(edge)})`};
   if (cov <= pix.th) return;
   float shade = 0.6;
   int which = 1;
