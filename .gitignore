@@ -1,0 +1,12 @@
+node_modules/
+tmp/
+frames/
+*.log
+.DS_Store
+.shader-debug.frag
+__pycache__/
+*.pyc
+.pytest_cache/
+overlay.png
+suggest.png
+suggest.json

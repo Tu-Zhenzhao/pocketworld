@@ -1,0 +1,23 @@
+{
+  "name": "pocketworld",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "A reference painting, turned into a dithered living diorama by one WebGL2 shader.",
+  "bin": {
+    "pocketworld": "cli/pocketworld.js"
+  },
+  "scripts": {
+    "dev": "node cli/pocketworld.js dev",
+    "start": "node cli/pocketworld.js dev",
+    "prep": "node cli/pocketworld.js prep",
+    "render": "node cli/pocketworld.js render"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.15.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
