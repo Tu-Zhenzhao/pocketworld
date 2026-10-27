@@ -5,7 +5,7 @@ Read `skills/pocketworld/SKILL.md` before you add or retune a scene. It is the w
 ## Step 0: Reference Image Standard
 
 Pocketworld is **loose on content, firm on style**. You can depict any story or scene, but the image must conform to the reference standard:
-- **Good reference**: 1:1 square (1024×1024), 2:1 dimetric isometric diorama island floating on a clean pure white background (`#FFFFFF`) with wide empty margins, low-saturation refined palette, no black outlines, readable subjects with distinct gaps, and moving parts drawn clearly and unoccluded.
+- **Good reference**: 1:1 square canvas (1024×1024), 2:1 dimetric perspective floating on a clean pure white background (`#FFFFFF`) with wide empty margins. Composition varies with the subject (square island block, long strip, narrow slice, circular stage, or open soft-fading vignette). Low-saturation refined palette, no black outlines, readable subjects with distinct gaps, and moving parts drawn clearly and unoccluded.
 - **Unacceptable**: Random street photos, cluttered edge-to-edge scenes, heavy black comic outlines, oversaturated candy colors, cropped subjects.
 - **Recommended path**: Generate the reference still with an image model using the prompt template in `skills/pocketworld/reference_prompt.md`.
 

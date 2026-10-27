@@ -9,6 +9,8 @@ Approved scenes, which this skill is written to reproduce:
 - `examples/rain-bus-stop` — umbrella sway, a breath, lamp glow, ripples, drips, rain
 - `examples/rooftop-laundry` — cloth warp, inpainted background, shadow sway, a cat's breath, motes
 - `examples/chess-under-tree` — the generic `layers` profile: foliage sway, a chained rigid fan (forearm → hand + fan), a swaying shadow, a few falling leaves
+- `examples/snow-campfire` — leaping campfire flames, dual-harmonic flicker light, breathing camper, resting dog with rigid duty-cycle ear flick, drifting snow
+- `examples/lake-boat` — trembling fishing rod, lake water waves and ripples, fisherman breathing, foliage sway, lantern flicker, drifting fireflies
 
 All three are 260 cells, 12 seconds, 60 fps, seamless.
 
@@ -53,18 +55,33 @@ Read `skills/pocketworld/reference_prompt.md` first. The painting is the base la
 **Generating a reference still with an image model is the recommended path.**
 
 #### Loose on content, firm on style
-Pocketworld is **loose on content, firm on style**. You can depict any scene or story you want (a quiet bus stop, a rooftop terrace, friends playing chess, a campfire in the snow, a noodle cart, a garden greenhouse). But the visual contract is strict:
+Pocketworld is **loose on content, firm on style**. You can depict any scene or story you want (a quiet bus stop, a rooftop terrace, friends playing chess, a campfire in the snow, a noodle cart, a fisherman on a lake, a garden greenhouse). But the visual contract is strict:
 
 - **What a good reference looks like:**
   - **Square (1:1, 1024×1024)**: Canonical coordinate space for `scene.json` and prep.
-  - **Isometric small diorama island**: 2:1 dimetric perspective (ground recedes down-left and down-right, verticals upright, camera looking down like a miniature model on a desk).
-  - **Plain white / clean background**: Pure paper white (`#FFFFFF`) with wide, empty margins. The diorama floats as a contained island; edges fade into the white paper.
-  - **Pixel-art / painterly pixel aesthetic**: Readable textures (wood, cloth, asphalt, stone, foliage) that translate naturally into a 260-cell dither grid.
+  - **Isometric diorama perspective**: 2:1 dimetric perspective (ground recedes down-left and down-right, verticals upright, camera looking down like a miniature model on a desk).
+  - **Plain white / clean background**: Pure paper white (`#FFFFFF`) with wide, empty margins. The diorama floats as a contained subject; edges fade or dissolve softly into the white paper.
+  - **Pixel-art / painterly pixel aesthetic**: Readable textures (wood, cloth, asphalt, stone, foliage, water) that translate naturally into a 260-cell dither grid.
   - **Low-saturation refined palette**: Natural watercolor/gouache tones. Muted earthy or atmospheric hues with 1–2 restrained accents. Never neon or candy-colored.
   - **No black outlines**: Depth and shapes read from light, color, and value contrast—never comic ink contours or dark cartoon strokes.
   - **Subjects separated with clear gaps**: Distinct negative space between figures and props so polygon cutouts stay clean.
-  - **Moving parts drawn clearly and unoccluded**: Anything that moves later (cloth, an umbrella, a fan, branches, animal ears, water puddle) must be visible, delineated, and unoccluded.
+  - **Moving parts drawn clearly and unoccluded**: Anything that moves later (cloth, an umbrella, a fan, branches, animal ears, water puddle, fishing rod) must be visible, delineated, and unoccluded.
   - **No text, watermark, logo, or border**: No lettering or frame cards.
+
+#### Composition & Footprint Variety (Do not over-constrain to a square block)
+
+User guidance:
+> "在生成这些图画的时候，不要简简单单的就是限制于就是这么一个正方形区域，没有明显的边界，或者说那种淡淡的感觉，其实都很好，你看以前那个那个艺术家，角度其实一样的，但里面内容是很闲适，很风格的，有长一点儿的，有短一点儿的，有专门就是一个像舞台一样的抛球的呀，对吧？这个我觉得可以加一下，就是在skill里面提一下就行了"
+
+**What this means for generation**:
+Keep the same **2:1 dimetric isometric camera angle** (and 1024×1024 square canvas floating on pure `#FFFFFF` white margins), but do **NOT** force every scene into a square island block. Let the composition footprint match the subject:
+- **Square island block**: e.g., a city sidewalk curb, bus stop corner, or courtyard (`examples/rain-bus-stop`, `examples/chess-under-tree`).
+- **Long strip / elongated slice**: e.g., a narrow pier, riverbank stretch, sidewalk path, or shoreline.
+- **Short narrow slice**: e.g., a doorway threshold, garden wall, or cafe window.
+- **Small circular/oval stage or platform**: e.g., a street performer or juggler on a small round wooden stage.
+- **Open vignette with soft fading perimeter**: No hard geometric ground cut; water ripples, mist, ground haze, or cobblestones gently dissolve and fade into the pure white paper without hard edges (e.g., `examples/lake-boat`, `examples/snow-campfire`).
+
+Teach agents to pick the composition footprint that naturally fits the scene rather than defaulting to a block. `check-ref` checks the 1:1 image canvas, pure white margins, saturation, and brightness—it never requires a square block geometry.
 
 - **What is NOT acceptable:**
   - ❌ **Random street photos or real-world snapshots**: Cluttered backgrounds, camera lens distortion, edge-to-edge coverage, and noisy real-world lighting break prep, inpainting, and palette fitting.
@@ -346,5 +363,7 @@ The approved bus stop, measured on its MP4 at 260² with an RGB sum threshold of
 | `src/element.js` | `<pocket-world>` |
 | `examples/rain-bus-stop` | approved rain scene |
 | `examples/rooftop-laundry` | approved cloth scene |
-| `examples/chess-under-tree` | `layers` test scene (rigid fan, foliage) |
+| `examples/chess-under-tree` | `layers` scene (rigid fan, foliage sway) |
+| `examples/snow-campfire` | `layers` scene (campfire, rigid duty ear flick, snow) |
+| `examples/lake-boat` | `layers` scene (trembling rod, water waves, fireflies) |
 | `experimental/sdf/` | retired procedural figures |

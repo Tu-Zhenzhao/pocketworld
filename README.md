@@ -36,6 +36,14 @@ A winter campsite diorama. The campfire flames dance, warm amber light flickers 
 
 [Video](examples/snow-campfire/out/loop.mp4). [Reference beside the frame](examples/snow-campfire/out/compare.png). [The ear at four phases](examples/snow-campfire/out/dog_ear_phases.png).
 
+## Lake boat
+
+An elderly fisherman on a calm lake at twilight. The slender bamboo rod shivers with a light bite, the water ripples gently, a warm lantern glows from the bow, the fisherman breathes, and fireflies drift through the cool evening air.
+
+![Fisherman on the lake](examples/lake-boat/out/loop.gif)
+
+[Video](examples/lake-boat/out/loop.mp4). [Reference beside the frame](examples/lake-boat/out/compare.png). [The fishing rod at four phases](examples/lake-boat/out/fishing_rod_phases.png).
+
 ## Thirty seconds
 
 ```bash

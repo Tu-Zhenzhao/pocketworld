@@ -17,7 +17,13 @@ import puppeteer from "puppeteer-core";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PY = process.env.PYTHON || "python3";
 const TOOL = path.join(ROOT, "tools", "pocketworld.py");
-const SCENES = ["examples/rain-bus-stop", "examples/rooftop-laundry", "examples/chess-under-tree"];
+const SCENES = [
+  "examples/rain-bus-stop",
+  "examples/rooftop-laundry",
+  "examples/chess-under-tree",
+  "examples/snow-campfire",
+  "examples/lake-boat",
+];
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -166,14 +172,15 @@ Usage:
   node cli/pocketworld.js prompt "<scene description in any language>"
 
 Template:
-  A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin.
+  A square illustration of a miniature diorama on a pure white background, 1024 by 1024, with a wide empty white margin.
+  Composition: [CHOOSE FOOTPRINT: square island block | long horizontal or diagonal strip | short narrow slice | small round stage/platform | open vignette with soft dissolving edges].
   The scene is [ONE-SENTENCE SCENE SUMMARY: who, where, time of day, atmosphere].
   2:1 dimetric perspective, like a miniature model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down.
-  Soft lighting. Delicate low-saturation refined palette, muted painterly tones, no black outlines, no text, no watermark, no border, no frame.
-  Diorama island edges fade softly into the clean white paper.
+  Soft lighting. Delicate low-saturation refined palette, muted painterly watercolor tones, no black outlines, no text, no watermark, no border, no frame.
+  Diorama perimeter fades softly into the clean white paper.
   [MATERIALS AND KEY ACCENT COLOURS].
-  Figures and gestures: [LIST FIGURES AND THEIR POSE/GESTURE].
-  Moving elements: [LIST 1-3 MOVING PARTS: e.g. cloth, umbrella, fan, flame, pet] clearly delineated and unoccluded with space around them.
+  Figures and gestures: [LIST FIGURES AND THEIR POSE/GESTURE with distinct negative space].
+  Moving elements: [LIST 1-3 MOVING PARTS: e.g. cloth, umbrella, fan, flame, fishing rod, pet] clearly delineated and unoccluded with space around them.
   Painterly pixel diorama aesthetic, airy and clean.
 
 Examples in this repo:
@@ -181,13 +188,14 @@ Examples in this repo:
   - rooftop-laundry:   "a sunlit rooftop terrace with clothes swaying on a line and a sleeping cat..."
   - chess-under-tree:  "two friends playing chess under a leafy tree, one waving a palm-leaf fan..."
   - snow-campfire:     "a winter campsite in fresh snow with a flickering campfire and sleeping dog..."
+  - lake-boat:         "an elderly fisherman in a wooden boat on a calm lake at twilight holding a slender fishing rod..."
 
 See skills/pocketworld/reference_prompt.md for detailed guidelines.
 `);
     return;
   }
 
-  const prompt = `A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. The scene is ${desc.trim()}. 2:1 dimetric perspective, like a miniature architectural model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down. Soft lighting. Delicate low-saturation refined palette, muted painterly watercolor tones, no black outlines, no ink contours, no comic art, no text, no watermark, no border, no frame. Diorama island edges fade softly into the clean white paper. Figures have clear gestures with distinct negative space; all moving parts (e.g. cloth, handheld props, foliage, water, or flames) are clearly visible, unoccluded, and separable from the background. Painterly pixel diorama aesthetic, airy and clean.`;
+  const prompt = `A square illustration of a miniature diorama on a pure white background, 1024 by 1024, with a wide empty white margin. The scene is ${desc.trim()}. 2:1 dimetric perspective, like a miniature architectural model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down. Composition fits the subject naturally (e.g. a small island block, a long slice or strip, a round platform, or an open vignette with no hard boundary fading softly into white paper). Soft lighting. Delicate low-saturation refined palette, muted painterly watercolor tones, no black outlines, no ink contours, no comic art, no text, no watermark, no border, no frame. Figures have clear gestures with distinct negative space; all moving parts (e.g. cloth, handheld props, foliage, water ripples, or flames) are clearly visible, unoccluded, and separable from the background. Painterly pixel diorama aesthetic, airy and clean.`;
 
   const negative = `photorealistic, photograph, real-life street photo, black outlines, heavy ink contours, comic art, cel shading, vector graphic, text, watermark, signature, logo, border, frame, card border, edge-to-edge background, sky filling frame, cropped diorama, touching borders, oversaturated, neon candy colors, 3D plastic render, high gloss.`;
 
@@ -202,11 +210,12 @@ See skills/pocketworld/reference_prompt.md for detailed guidelines.
   console.log(`\n--------------------------------------------------------------------------------`);
   console.log(`STYLE CONTRACT & NEXT STEPS:`);
   console.log(`--------------------------------------------------------------------------------`);
-  console.log(`1. Aspect ratio: 1:1 square (ideal: 1024x1024).`);
+  console.log(`1. Aspect ratio: 1:1 square canvas (ideal: 1024x1024).`);
   console.log(`2. Background: Pure clean white (#FFFFFF) with wide empty margins on all sides.`);
-  console.log(`3. Style: Loose on content, firm on style. Low saturation, no black outlines.`);
-  console.log(`4. Save your image to: examples/<name>/reference.jpg`);
-  console.log(`5. Validate with: node cli/pocketworld.js check-ref examples/<name>/reference.jpg\n`);
+  console.log(`3. Composition: Free footprint (square island, long strip, circular stage, or soft open vignette).`);
+  console.log(`4. Style: Loose on content, firm on style. Low saturation, no black outlines.`);
+  console.log(`5. Save your image to: examples/<name>/reference.jpg`);
+  console.log(`6. Validate with: node cli/pocketworld.js check-ref examples/<name>/reference.jpg\n`);
 }
 
 function resolveRefTarget(arg) {
