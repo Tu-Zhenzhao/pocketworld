@@ -1,5 +1,5 @@
 {
- "_doc": "Two old men playing Chinese chess under a big tree. Test scene for the generic 'layers' profile: foliage soft deform, a chained rigid fan (forearm -> hand+fan), a swaying canopy shadow, a few falling leaves.",
+ "_doc": "Two old men playing Chinese chess under a big tree. Test scene for the generic 'layers' profile: foliage soft deform, both men breathing (soft, anchored at the waist), a chained rigid fan (forearm -> hand+fan), a swaying canopy shadow, a few falling leaves.",
  "profile": "layers",
  "reference": "reference.jpg",
  "loopSeconds": 12,
@@ -172,6 +172,26 @@
  "still": [
   [
    [
+    446,
+    596
+   ],
+   [
+    490,
+    596
+   ],
+   [
+    490,
+    630
+   ],
+   [
+    446,
+    630
+   ]
+  ]
+ ],
+ "detail": [
+  [
+   [
     630,
     430
    ],
@@ -311,6 +331,106 @@
    "hem": 36,
    "amp": 1.1,
    "phase": 3.8
+  },
+  {
+   "type": "soft",
+   "name": "breath_left",
+   "preset": "cloth",
+   "poly": [
+    [
+     418,
+     456
+    ],
+    [
+     498,
+     456
+    ],
+    [
+     506,
+     560
+    ],
+    [
+     472,
+     600
+    ],
+    [
+     440,
+     628
+    ],
+    [
+     356,
+     628
+    ],
+    [
+     358,
+     520
+    ],
+    [
+     408,
+     502
+    ]
+   ],
+   "line": [
+    356,
+    628,
+    470,
+    628
+   ],
+   "hem": -165,
+   "amp": 0.4,
+   "dir": 270,
+   "phase": 1.0,
+   "feather": 6
+  },
+  {
+   "type": "soft",
+   "name": "breath_right",
+   "preset": "cloth",
+   "poly": [
+    [
+     624,
+     424
+    ],
+    [
+     700,
+     424
+    ],
+    [
+     712,
+     480
+    ],
+    [
+     722,
+     560
+    ],
+    [
+     704,
+     602
+    ],
+    [
+     598,
+     602
+    ],
+    [
+     590,
+     540
+    ],
+    [
+     618,
+     488
+    ]
+   ],
+   "line": [
+    598,
+    602,
+    722,
+    602
+   ],
+   "hem": -175,
+   "amp": 0.4,
+   "dir": 270,
+   "phase": 3.4,
+   "feather": 6
   },
   {
    "type": "rigid",

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * pocketworld prep | render | overlay | suggest | dev
+ * pocketworld prep | render | phases | overlay | suggest | dev
  *
  *   node cli/pocketworld.js prep examples/rain-bus-stop
  *   node cli/pocketworld.js render examples/rain-bus-stop
@@ -161,8 +161,9 @@ async function dev(port) {
 function help() {
   console.log(`pocketworld
 
-  prep [scene]       downsample, palette, masks  (default: both examples)
-  render [scene]     60fps mp4, gif, compare, contact sheet, smoothness
+  prep [scene]       downsample, palette, masks, build/parts.png  (default: all examples)
+  render [scene]     60fps mp4, gif, compare, contact sheet, smoothness, out/<part>_phases.png
+  phases <scene>     out/<part>_phases.png again from an existing out/loop.mp4
   overlay <scene>    coordinate grid on the reference
   suggest <scene>    key-colour and cloth/wet guesses
   dev [--port N]     playground on :8787
@@ -184,6 +185,9 @@ if (!cmd || cmd === "help" || cmd === "--help") {
   for (const s of scenes) await python(["prep", s]);
 } else if (cmd === "render") {
   for (const s of scenes) await renderScene(s);
+} else if (cmd === "phases") {
+  if (!positionals.length) throw new Error("phases needs a scene");
+  for (const s of scenes) await python(["phases", s]);
 } else if (cmd === "overlay") {
   if (!positionals.length) throw new Error("overlay needs a scene");
   const step = rest.includes("--step") ? ["--step", rest[rest.indexOf("--step") + 1]] : [];

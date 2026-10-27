@@ -16,18 +16,55 @@ All three are 260 cells, 12 seconds, 60 fps, seamless.
 
 Any picture the user hands you should reach this quality through the standard flow below, with almost no one-off code. You intervene only when a specific frame is wrong, and then only with the knob that matches that problem. The map is further down. Do not invent a new shader per scene.
 
+## Working method: look, critique, fix
+
+Never trust a number you have not looked at. Open these in order. After each one, write in `REPORT.md` **what I see / is it right**:
+
+1. `overlay.png` (grid on, every poly drawn) — each poly hugs the object it names.
+2. `build/parts.png` — each tile IS the named object, nothing else. Confirm each tile in writing, e.g. `fan: palm-leaf fan blade + hand, no table`. Wrong: fix the poly, re-prep.
+3. `out/<part>_phases.png` for every rigid part (and each breath) — the motion reads as the intended action.
+4. `out/compare.png`, `contact.png`, `contact_detail.png`.
+
+Zoom in. Crop faces, hands and every moving part, and set each one next to the same crop of the reference:
+
+```sh
+ffmpeg -v error -i out/loop.mp4 -ss 1.5 -frames:v 1 -vf "crop=200:200:560:540,scale=600:600:flags=neighbor" crop_t.png
+ffmpeg -v error -i reference.jpg -vf "scale=1040:1040,crop=200:200:560:540,scale=600:600:flags=neighbor" crop_ref.png
+```
+
+Rubric, run every round:
+
+- Each cutout contains only the named object.
+- No tearing, holes, halo or specks.
+- The colours match the reference: not more saturated, no greasy flat blocks, no black outlines.
+- Faces are readable and expressive.
+- Figures are alive: each one breathes or nods.
+- Each motion is readable and physically sensible: direction, pivot, amplitude, and a rhythm at breath or heartbeat pace.
+- The loop is seamless, with no stepping.
+
+Do at least two rounds. For each round, `REPORT.md` lists the issues found, the fix you applied, and one evidence image. Known traps are in [failures/](failures/README.md).
+
 ## Standard flow
 
 1. **Get the still.** Use `reference-prompt.md`. Square, white page, isometric, no black outlines. Save it as `examples/<name>/reference.jpg`.
 2. **Pick a profile.** New scenes use `layers` (see *Motion layers* below): decompose the picture into parts, give each moving part a physical category, mark its anchor or pivot, pick amplitude and rhythm. The two older profiles stay for their approved scenes:
    - `rain` — wet ground, falling rain, drips, ripples, a glow, one or two rigid layers (an umbrella, a breathing torso).
    - `laundry` — cloth or foliage that warps, something still in front of it, optional animal, shadows, motes.
-3. **Write `scene.json`.** Start from the nearest example. Change the polygons. Keep the `look` block unless a knob below says not to.
-4. **Place points without guessing.** `node cli/pocketworld.js overlay examples/<name> --step 64` writes `overlay.png`, the reference with a numbered grid and any polygons you already have. Read coordinates off it. Drop to `--step 32` for a hem or a hand.
+3. **Write a minimal `scene.json` first.** `overlay` and `suggest` need it. Start with:
+   ```json
+   {"profile": "layers", "reference": "reference.jpg", "loopSeconds": 12,
+    "look": {"grid": 260, "K": 21, "kuwa": 1, "passes": 1, "haze": 0.3, "covBlur": 1, "spread": 0.055,
+             "lift": 0.9, "chroma": 0.95, "saturation": 0.92, "contrast": 1.02},
+    "layers": []}
+   ```
+   Then add polygons from the nearest example. Keep the `look` block unless a knob below says not to.
+4. **Place points without guessing.** `node cli/pocketworld.js overlay examples/<name> --step 64` writes `overlay.png`, the reference with a numbered grid and any polygons you already have. Read coordinates off it. Use `--step 32` for a hem, a hand, a fan or any other small part. Before you prep, add each poly to `scene.json`, re-run `overlay`, and check that the drawn outline sits on its object.
 5. **Let colour propose masks.** `node cli/pocketworld.js suggest examples/<name>` writes `suggest.png` and `suggest.json`: eight key-colour candidates, a pale-cloth mask (the same test prep uses), and a dark-blue wet guess. Copy the points that land on the right material. Throw away the rings that don't. Rooftop was 88 hand points before this helper; you should not be clicking that many from a blank file.
-6. **Prep.** `node cli/pocketworld.js prep examples/<name>` writes `build/`: the continuous base, the inpainted fill, the masks, `palette.png`, `manifest.json`.
+6. **Prep.** `node cli/pocketworld.js prep examples/<name>` writes `build/`: the continuous base, the inpainted fill, the masks, `palette.png`, `manifest.json`, and `parts.png`. Prep also prints lint lines (clamped saturation, oversized `still` rings, each rigid part's sweep in cells).
+   **Gate (mandatory):** open `build/parts.png`. Every moving layer's cutout (poly ∩ ink minus `still`) is shown zoomed on grey, with its pivot as a red dot and a thumbnail of the poly. In `REPORT.md`, write one line per part saying what the tile shows, e.g. `fan: palm-leaf fan blade + hand, no table`. If a tile is not the named object, fix the poly and re-prep. Do not render first.
 7. **Look at the still before you trust the motion.** Open `build/base.png`. It should be the reference, in cells, airy, no black contour. Then `node cli/pocketworld.js dev` and open the playground, or the capture page `cli/page.html?scene=/examples/<name>/build/manifest.json&scale=4&t=3`.
-8. **Render and judge.** `node cli/pocketworld.js render examples/<name>` writes `out/loop.mp4` (60 fps, nearest ×4, x264 crf 12, `tune animation`), `out/loop.gif`, `out/compare.png`, `out/contact.png`, `out/contact_detail.png`, and `out/metrics.json`.
+8. **Render and judge.** `node cli/pocketworld.js render examples/<name>` writes `out/loop.mp4` (60 fps, nearest ×4, x264 crf 12, `tune animation`), `out/loop.gif`, `out/compare.png`, `out/contact.png`, `out/contact_detail.png`, `out/metrics.json`, and `out/<name>_phases.png` for each rigid part and each non-foliage soft part. `node cli/pocketworld.js phases examples/<name>` rebuilds only the phase strips: 4 zoomed crops of that part across one cycle, labelled with the time.
+   **Gate (mandatory):** open each `<part>_phases.png`. In `REPORT.md`, confirm the motion reads as the intended action (e.g. `fan: blade sweeps ~17° about the grip, visible air stroke`). If you can't see it moving, the amplitude is too small.
 
 The web component, once prep has run:
 
@@ -47,6 +84,8 @@ The spec and the prompt live in `spec.md` and `reference-prompt.md`. Short versi
 Coordinates are **reference pixels**, origin top-left. Both examples are 1024.
 
 Shared `look` keys: `grid`, `K`, `kuwa`, `passes`, `haze`, `covBlur`, `spread`, `lift`, `chroma`, `saturation`, `contrast`.
+
+**Never raise `saturation` or `chroma` above 1.0. Use 0.9–1.0.** The palette is meant to be refined, not candy. `layers` prep clamps anything above 1.0 and warns. The approved rain and laundry scenes keep their own values.
 
 `K` is not the final count. The fitter keeps every key colour and adds centres until it has about `K - 1` scene colours. `K: 21` with 7 or 8 keys yields 20 scene colours. Rain then appends paper white and two rain tints (23 total). Laundry appends paper white only.
 
@@ -116,16 +155,30 @@ How each works:
 - **rigid / path** parts are cut out by `poly` ∩ ink, minus `still`; the hole is inpainted in prep. The shader samples the part through the inverse transform about the pivot, so it moves as one piece and draws over whatever is behind it. Angle is `bias + amp · ease(u)`: 0 at t = 0 (the reference pose), peak, then back. `snap` warps time so the first half is quicker. A `parent` composes transforms: the child rotates about its own pivot, then follows the parent.
 - **particles, waves, light** are the bus-stop and rooftop effects, exposed as layers.
 
-`still` (one ring or a list) protects pixels from every layer. `detail` rings dither finer.
+`still` (one ring or a list), in `layers`, is masked out of all motion: soft weight is zero there and it is cut out of every rigid part. (In `laundry`, `still` is different: it is an occluder drawn back on top of the cloth.) `detail` rings dither finer.
 
-**Faces and hands.** Put every face, and every hand that does not hold a moving part, in `still`. A face at 260 cells is a few cells: it reads by being exactly the reference, so keep it expressive rather than trying to sharpen it, and never warp or rotate it. A hand that holds a rigid part goes with the part (the chess fan's hand rides with the fan).
+**`still` is small.** Use it only for eyes, facial detail and small precise things (a hand resting on a board). Never put a whole figure in `still`: the figure freezes, and a soft layer around it tears at the edge. Prep warns about a `still` ring larger than about 90×90 px.
+
+**Faces.** Put faces in `detail`, not `still`. A face at 260 cells is a few cells: it reads by being exactly the reference, so keep it expressive rather than sharpening it, and never rotate it. A hand that holds a rigid part goes with the part (the fan's hand rides with the fan).
+
+**Figures breathe by default.** Give every character a subtle breath layer: a `soft` layer over the torso, `line` along the seat or waist, a negative `hem` (anchored at the bottom), `dir` 270 (up), `amp` 0.3–0.5 cells, `preset` `cloth`, `feather` 6, and a different `phase` per person. The alternative is a rigid nod: head and shoulders, pivot at the neck, 1–3°, with the face not in `still`.
 
 **Out of scope for now:** a pose that is not in the reference. A part only moves around where it was drawn: the chess man's fan swings near his face, it cannot move from his side to his chest. Change the still instead.
 
 Tuning per category:
 
 - **soft** — too stiff: raise `amp` (foliage 1–1.3 cells, cloth 1.6–3.5). The anchor line moves: the `line` is on the wrong side, or `hem` sign is wrong. Edge of a crown shears: grow `poly` or raise `feather`. Neighbours in lockstep: spread `phase` by 0.6–2.
-- **rigid** — keep 2–5° for a breath or a branch, 15–25° for a fan or a pendulum. A ghost of the part at rest: grow `poly` a few pixels. The part drags a bit of shirt along: tighten `poly` (ink inside it moves). The revealed hole looks smeared: lower `amp`; the inpaint is diffusion. Wrong direction: flip the sign of `amp`. Too mechanical: `snap` 0.15–0.25, chain a small parent swing (forearm 3–5°).
+- **rigid** — the motion must be readable. Minimum sweep about the pivot:
+
+  | part | amp |
+  |---|---|
+  | fan, handheld prop (about the grip) | ≥12°, usually 15–25° |
+  | pendulum, door, sign | ≥10° |
+  | forearm as parent | 3–5° |
+  | branch | 2–5° |
+  | head nod | 1–3° |
+
+  Prep prints `sweep N cells at the tip`. Under about 2 cells, nobody will see it. A ghost of the part at rest: grow `poly` a few pixels. The part drags a bit of shirt along: tighten `poly` (ink inside it moves). The revealed hole looks smeared: lower `amp`; the inpaint is diffusion. Wrong direction: flip the sign of `amp`. Too mechanical: `snap` 0.15–0.25, chain a small parent swing (forearm 3–5°).
 - **path** — `radius` 2–6 cells; a bird or a cloud should never leave the page.
 - **particles** — density 0.05–0.15 for leaves, 0.3–0.5 for snow. Too busy: lower `density` before `size`. Leaves `fall` 48–96 cells per loop, snow 96–160.
 - **waves** — shimmer 0.6–1, ripples 0.5–1. Ripples land on random wet cells (seed 7).
@@ -149,7 +202,7 @@ What each layer does:
 - **Cloth / foliage.** Backward map `colour(p) = layer(p − d(p))`. `d = amp · w^1.35 · breeze · n̂` plus a small upward lift of the hem. `n̂` is `normalize(vec2(-0.9, 0.45))`. Breeze is a 4 s wave travelling along the line, a 2 s harmonic, and a 12 s gust. Fold light `1 + 0.08 · w · cos(phase)` is applied before the dither. Sample bilinear, un-premultiply, `smoothstep` the alpha from 0.25 to 0.75.
 - **Shadows.** `base / S(p) · S(p − d)`, same breeze, gain about 0.8. The floor texture stays put. Only the shadow edge moves.
 - **Motes.** Closed paths, a 4 s twinkle.
-- **Steam.** `steam(p, origin, ph)` is in the shared library and is not called by either approved scene. Mix it before the quantize if a scene needs a kettle or a vent: `col = mix(col, vec3(0.93, 0.94, 0.95), steam(p, origin, ph) * 0.35 * mask)`. The rise is 4 s, so it already divides the loop.
+- **Steam.** In `layers`, use a `particles` layer with `kind` `steam` and `origin` [x, y] at the spout. It needs no shader code. The rise is 4 s, so it divides the loop.
 
 Paper test, rain: `max(coverage, dripAlpha * 0.9)` against the Bayer threshold, then a rare rain speck from the second-to-last palette entry. Laundry: coverage alone, paper is the last palette entry. The prose note "glow leaks onto the paper" is the lamp's colour mix on cells that are already covered, not a second paper test. Do not "fix" this. The approved frames were matched with the test as written.
 
@@ -168,7 +221,7 @@ Time is `uT`, continuous, wrapped with `mod` to the loop. Capture sets it to `fr
 
 If you add a period, it has to divide 12. A 5 s sway will pop at the seam. Sample any noise on `vec2(cos(ph * k), sin(ph * k))` with `k` in {1, 2, 4} and `ph = TAU * t / loop`.
 
-People stay almost still. If a person is the thing bouncing, the scene is wrong.
+People stay almost still, but alive: a breath or a nod. If a person is the thing bouncing, the scene is wrong.
 
 ## Knobs
 
@@ -179,7 +232,7 @@ Change one, re-prep or re-render, look at `compare.png` and the detail strip. Do
 | Too painterly, no cell structure | Lower `look.grid` toward 260. Do not go under ~240 or the faces melt. |
 | Greasy, big flat colour areas | Less smoothing. `kuwa` 0 or 1, `passes` 1, `haze` 0.3, `posterize` 0, `mode` 0. Never turn posterize back on to "simplify". |
 | Washed-out fold, a hero colour averaged into the wall | Add a `keyColours` point on that material. If the whole palette jumped after the jpeg was re-saved, set `palette` to the list you approved. |
-| Muddy grey mid-tones | Raise `saturation` a little, keep `chroma` at 1.1, lift with `lift` 0.9 (rain) or 0.85 (sun). |
+| Muddy grey mid-tones | Add a `keyColours` point on the hero colour first. Then `lift` 0.9 (rain) or 0.85 (sun). Keep `saturation` and `chroma` ≤ 1.0. |
 | Choppy, stuttering rain or cloth | Time is being stepped. It must stay continuous at 60 fps. Do not `floor(t * 12)`. |
 | Motion too strong, rubber cloth, umbrella flailing | Lower `amp` (sheets 2.5–3.5, shirts 1.6–1.8). Umbrella is `radians(1.7)` in the rain `main`. Breath is `0.45` (him) and `0.38` (cat) cells. |
 | Motion too weak, the loop looks frozen | Raise the same numbers a little. Add fold light rather than a huge `amp`. Check the mask is actually on the moving pixels. |
@@ -241,7 +294,10 @@ The approved bus stop, measured on its MP4 at 260² with an RGB sum threshold of
 | path | role |
 |---|---|
 | `tools/pocketworld.py` | prep, overlay, suggest, contact sheet, metric |
-| `cli/pocketworld.js` | `prep`, `render`, `overlay`, `suggest`, `dev` |
+| `cli/pocketworld.js` | `prep`, `render`, `phases`, `overlay`, `suggest`, `dev` |
+| `build/parts.png` | prep's contact sheet of every moving cutout (gate) |
+| `out/<part>_phases.png` | render/`phases`: one part across its cycle (gate) |
+| `skills/pocketworld/failures/` | common failures: symptom, cause, fix |
 | `src/shaders.js` | motion library and the three composites (`layers`, `rain`, `laundry`) |
 | `src/player.js` | `mount(canvas, manifestUrl)` |
 | `src/element.js` | `<pocket-world>` |
