@@ -37,6 +37,9 @@ Coverage is blurred about 1 cell and only allowed to grow outward (`max(cov, blu
 - **12 second seamless loop.** Every period divides 12. Noise is sampled on a circle in noise space at harmonics 1, 2 and 4 of the loop.
 - Breath is 4–6 s. A heartbeat is about 0.9 s. Both divide the loop (3×4 s, 2×6 s, 13 ripples in 12 s ≈ 0.92 s).
 - Easing is sine, smoothstep, or a cubic ease-out. Nothing snaps on and off.
+- Motion comes in physical categories (soft deform, rigid rotate about a pivot, path, particles, surface waves, light). See *Motion layers* in `SKILL.md`. Never a per-object shader.
+- Faces and hands that do not hold a moving part stay in `still`: expressive, never sharpened, never warped.
+- Only poses that are in the reference. A part swings about where it was drawn.
 - People stay almost still. Life is the environment: rain, water, light, cloth, a breath, an ear.
 
 ## Smoothness

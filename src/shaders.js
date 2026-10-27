@@ -1,5 +1,7 @@
 /**
- * One fragment shader, two profiles.
+ * One fragment shader, three profiles. `rain` and `laundry` are the approved
+ * composites. `layers` is the generic one: motion by physical category
+ * (soft, rigid, path, particles, waves, light). See skills/pocketworld/SKILL.md.
  *
  * Shared pieces are the motion library: Bayer dither, OKLab, noise, rain,
  * cloth breeze, motes, and a small steam puff. Each profile's main() is the
@@ -280,6 +282,184 @@ void main(){
 }
 `;
 
+
+const layersLib = `
+// Generic motion library for the "layers" profile. One function per physical category.
+// Every period is a whole number of cycles per loop, so the 12 s seam is invisible.
+
+// 1. soft deform. f = soft texel (w, s, amp/4, phase), g = soft2 texel (preset, dir).
+//    cloth: the approved breeze plus a hem lift. foliage: same breeze, a loop-harmonic flutter
+//    that varies across the crown, no lift.
+vec2 softDisp(vec2 p, vec4 f, vec4 g, float ph){
+  float w = f.r*1.15, s = f.g*1.4 - .2, A = f.b*4., phs = f.a*TAU;
+  float b = breeze(s, ph, phs);
+  float an = g.g*TAU; vec2 n = vec2(cos(an), sin(an));
+  if(g.r > .5){
+    b += .45*(noise(p*.12 + 2.*vec2(cos(ph*4.+phs), sin(ph*4.+phs))) - .5);
+    return A*w*b*n;
+  }
+  float ww = pow(clamp(w,0.,1.15), 1.35);
+  return A*ww*b*n + vec2(0., -.35*A*w*w*pow(abs(b), 1.5));
+}
+
+// 4. particles. kind 1 snow, 2 leaves, 3 motes. A falling particle travels \`rep\` cells per loop
+//    in slots of \`lat\` cells, so rep/lat must be an integer (prep rounds it).
+float fallField(vec2 p, float t, float ph, float kind, float dens, float size, float rep, float seed){
+  float lat = 16.;
+  float li = floor(p.x/lat);
+  float sway = (kind > 1.5 ? 4. : 2.)*sin(ph*3. + hash1(li+seed)*TAU);
+  float v = p.y - rep/uLoop*t + hash1(li*7.1+seed)*rep;
+  float k = mod(floor(v/lat), rep/lat);
+  if(hash(vec2(li+seed*13., k)) > dens) return 0.;
+  vec2 cen = vec2((li+.5)*lat + (hash(vec2(k,li))-.5)*3. + sway, lat*.5);
+  vec2 e = vec2(p.x, mod(v, lat)) - cen;
+  if(kind > 1.5){ float a = ph*6. + hash(vec2(li,k))*TAU; e = mat2(cos(a),-sin(a),sin(a),cos(a))*e; e.y *= 2.2; }
+  return exp(-dot(e,e)/(2.*size*size));
+}
+float moteLattice(vec2 p, float ph, float dens, float size, float seed){
+  float lat = 22., mo = 0.;
+  vec2 b = floor(p/lat - .5);
+  for(int j=0;j<4;j++){
+    vec2 c = b + vec2(j%2, j/2);
+    if(hash(c+seed) > dens) continue;
+    float h = hash(c*1.3+seed)*TAU;
+    vec2 cen = (c+.5)*lat + vec2(5.*sin(ph+h) + 2.*sin(ph*2.+h), -4.*cos(ph+h) + 1.5*cos(ph*3.+h*2.));
+    vec2 e = p - cen;
+    mo = max(mo, exp(-dot(e,e)/(2.*size*size))*(.5+.5*sin(ph*3.+h)));
+  }
+  return mo;
+}
+
+// 5. surface waves: shimmer on a circle in noise space, harmonics 1, 2, 4.
+float shimmer(vec2 p, float ph){
+  vec2 q = p*vec2(.16,.36);
+  float n1 = noise(q + 2.5*vec2(cos(ph), sin(ph)));
+  float n2 = noise(q*1.9 + 7.3 + 1.6*vec2(cos(ph*2.+1.), sin(ph*2.+1.)));
+  float n3 = noise(p*vec2(.45,.9) + 3.1 + 1.2*vec2(cos(ph*4.), sin(ph*4.)));
+  return smoothstep(.60,.86, .55*n1 + .3*n2 + .15*n3);
+}
+// ripples: 13 heartbeats per loop (0.92 s), radius eases out cubic, ring fades (1-s)^2.
+float rippleField(vec2 p, float t){
+  float rip = 0.;
+  for(int i=0;i<13;i++){
+    float fi = float(i), age = mod(t - fi*uLoop/13., uLoop);
+    if(age > 2.4) continue;
+    float s = age/2.4, r = .8 + 9.*(1.-pow(1.-s,3.));
+    vec2 e = (p - uRip[i*3 % 40])*vec2(1.,2.2);
+    float ring = exp(-pow(length(e)-r,2.)/(2.*.35*.35)) + .45*exp(-pow(length(e)-.55*r,2.)/(2.*.35*.35));
+    rip = max(rip, ring*pow(1.-s,2.)*smoothstep(0.,.06,s));
+  }
+  return rip;
+}
+
+// 6. light. mode 0 breathe, 1 flicker, 2 glint, 3 shadow (darken). k = cycles per loop.
+float lightEnv(float mode, float k, float phs, vec2 p, float ph){
+  if(mode < .5) return .5 + .5*sin(ph*k + phs);
+  if(mode < 1.5) return .55*noise(3.*vec2(cos(ph*k+phs), sin(ph*k+phs))) + .45*noise(5.3 + 2.*vec2(cos(ph*13.), sin(ph*13.)));
+  if(mode < 2.5) return pow(.5 + .5*sin(ph*k + phs - (p.x + p.y)*.15), 14.);
+  return .75 + .25*sin(ph*k + phs);
+}
+`;
+
+const layersMain = `
+void main(){
+  vec2 c = floor(vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uRes * G);
+  vec2 p = c + .5;
+  float t = uT, ph = TAU*t/uLoop;
+  vec4 m = fetch(uMask, c), g = fetch(uSoft2, c);
+  float detail = m.g;
+  // background: the reference, or the inpainted fill wherever a rigid / path part was cut out
+  vec3 col = mix(fetch(uBase, c).rgb, fetch(uFill, c).rgb, m.a);
+  float cov = mix(m.r, m.b, m.a);
+
+  // 1. soft deform: backward warp of the reference itself, so nothing can tear
+  vec4 f = samp(uSoft, p);
+  if(f.r*f.b > .0005){
+    vec2 d = softDisp(p, f, samp(uSoft2, p), ph);
+    vec2 q = p - d;
+    col = mix(samp(uBase, q).rgb, samp(uFill, q).rgb, samp(uMask, q).a);
+    cov = mix(samp(uMask, q).r, samp(uMask, q).b, samp(uMask, q).a);
+  }
+
+  // 6. light (before parts so a shadow falls under a fan, not on it)
+  for(int i=0;i<4;i++){ if(i>=uNL) break;
+    vec4 lp = uLp[i];
+    vec2 q = p - lp.w*vec2(sin(ph*lp.y + float(i)), .3*cos(ph*lp.y + float(i)));
+    float w = samp(uLight, q)[i];
+    if(w < .002) continue;
+    float e = lightEnv(lp.x, lp.y, float(i)*1.3, p, ph);
+    if(lp.x > 2.5) col *= 1. - w*lp.z*e;
+    else col = mix(col, uLc[i], w*lp.z*e);
+  }
+
+  // 2 + 3. rigid parts and path parts: inverse transform, sample the cut-out layer
+  for(int i=0;i<8;i++){ if(i>=uNP) break;
+    vec2 q = mat2(uXa[i]) * p + uXt[i];
+    float a = i < 4 ? samp(uPa0, q)[i] : samp(uPa1, q)[i-4];
+    a = smoothstep(.2, .7, a);
+    if(a > 0.){ vec4 pc = samp(uPart, q); col = mix(col, pc.rgb, a); cov = mix(cov, pc.a, a); }
+  }
+
+  // 5. surface waves
+  float wet = g.b;
+  if(wet > .02){
+    col = mix(col, vec3(.80,.86,.93), wet*shimmer(p, ph)*.32*uWave.x);
+    if(uWave.y > 0.) col = mix(col, vec3(.83,.88,.94), clamp(rippleField(p, t),0.,1.)*.75*uWave.y*smoothstep(.4,.8,wet));
+  }
+
+  // 4. particles
+  float fx = 0.;
+  vec4 z = samp(uZone, p);
+  for(int i=0;i<4;i++){ if(i>=uNQ) break;
+    float zw = z[i]; if(zw < .01) continue;
+    vec4 q = uPp[i]; float a = 0.;
+    if(q.x < .5){
+      a = max(.55*rainLayer(p,t,.42, 6.,5., 240., 20., .55*q.y, .38, 1.+float(i)),
+          max(.75*rainLayer(p,t,.42, 9.,7., 336., 28., .5*q.y, .45, 2.+float(i)),
+              .95*rainLayer(p,t,.42,13.,10.,432., 36., .45*q.y, .55, 3.+float(i))));
+    } else if(q.x < 2.5) a = fallField(p, t, ph, q.x, q.y, q.z, q.w, float(i)*7.);
+    else if(q.x < 3.5) a = moteLattice(p, ph, q.y, q.z, float(i)*5.);
+    else a = steam(p, uPo[i], ph)*.6;
+    a *= zw;
+    col = mix(col, uPc[i], a*.85);
+    fx = max(fx, a*.9);
+  }
+
+  float th = bayer4(c);
+  float spread = uSpread*mix(1., .45, detail)*uDither;
+  vec3 L = oklab(clamp(col,0.,1.)); L.x += (th-.5)*spread;
+  int best = 0; float bd = 1e9;
+  for(int i=0;i<24;i++){ if(i>=uN-1) break;
+    vec3 e = (L - uLab[i])*vec3(1.,2.,2.); float dd = dot(e,e);
+    if(dd < bd){ bd = dd; best = i; } }
+  vec3 outc = uPal[best];
+  if(max(cov, fx) < mix(.1, .9, th)*uDither + .5*(1.-uDither)) outc = uPal[uN-1];
+  o = vec4(outc, 1.);
+}
+`;
+
+const layersFrag = `#version 300 es
+precision highp float;
+uniform sampler2D uBase, uFill, uMask, uSoft, uSoft2, uPart, uPa0, uPa1, uLight, uZone;
+uniform float uT, uLoop, G, uSpread, uDither;
+uniform vec3 uPal[24], uLab[24];
+uniform int uN, uNP, uNL, uNQ;
+uniform vec4 uXa[8];
+uniform vec2 uXt[8];
+uniform vec4 uLp[4], uPp[4];
+uniform vec3 uLc[4], uPc[4];
+uniform vec2 uPo[4], uRip[40], uWave, uRes;
+uniform vec2 uMote[8];
+uniform int uNM;
+out vec4 o;
+const float TAU = 6.2831853;
+${shared}
+${rainLayer}
+${clothLayer}
+${layersLib}
+${layersMain}
+`;
+
 const vert = `#version 300 es
 in vec2 a;
 void main(){gl_Position=vec4(a,0,1);}
@@ -322,9 +502,11 @@ export const shaders = {
   vert,
   rain: rainFrag,
   laundry: laundryFrag,
+  layers: layersFrag,
 };
 
 export const textureNames = {
   rain: ['base', 'fill', 'mask', 'mask2', 'mask3', 'mask4'],
   laundry: ['base', 'fill', 'cloth', 'cfield', 'mask', 'mask2', 'mask3', 'sfield'],
+  layers: ['base', 'fill', 'mask', 'soft', 'soft2', 'part', 'pa0', 'pa1', 'light', 'zone'],
 };

@@ -20,6 +20,14 @@ The same recipe, a sunny scene. The sheets take the wind. The cat takes a breath
 
 [Video](examples/rooftop-laundry/out/loop.mp4). [Reference beside the frame](examples/rooftop-laundry/out/compare.png).
 
+## Chess under the tree
+
+The generic `layers` profile: motion is a list of layers by physical category (soft deform, rigid rotate about a pivot, path, particles, surface waves, light). The leaves sway, a few fall, and the man fans himself: the fan is cut out and rotates about his grip, riding on a small forearm swing.
+
+![Chess under the tree](examples/chess-under-tree/out/loop.gif)
+
+[Video](examples/chess-under-tree/out/loop.mp4). [Reference beside the frame](examples/chess-under-tree/out/compare.png). [The fan at four phases](examples/chess-under-tree/out/fan_phases.png).
+
 ## Thirty seconds
 
 ```bash

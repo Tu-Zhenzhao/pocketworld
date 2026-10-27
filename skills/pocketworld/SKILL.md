@@ -8,8 +8,9 @@ Approved scenes, which this skill is written to reproduce:
 
 - `examples/rain-bus-stop` — umbrella sway, a breath, lamp glow, ripples, drips, rain
 - `examples/rooftop-laundry` — cloth warp, inpainted background, shadow sway, a cat's breath, motes
+- `examples/chess-under-tree` — the generic `layers` profile: foliage sway, a chained rigid fan (forearm → hand + fan), a swaying shadow, a few falling leaves
 
-Both are 260 cells, 12 seconds, 60 fps, seamless.
+All three are 260 cells, 12 seconds, 60 fps, seamless.
 
 ## What "good" means
 
@@ -18,7 +19,7 @@ Any picture the user hands you should reach this quality through the standard fl
 ## Standard flow
 
 1. **Get the still.** Use `reference-prompt.md`. Square, white page, isometric, no black outlines. Save it as `examples/<name>/reference.jpg`.
-2. **Pick a profile.**
+2. **Pick a profile.** New scenes use `layers` (see *Motion layers* below): decompose the picture into parts, give each moving part a physical category, mark its anchor or pivot, pick amplitude and rhythm. The two older profiles stay for their approved scenes:
    - `rain` — wet ground, falling rain, drips, ripples, a glow, one or two rigid layers (an umbrella, a breathing torso).
    - `laundry` — cloth or foliage that warps, something still in front of it, optional animal, shadows, motes.
 3. **Write `scene.json`.** Start from the nearest example. Change the polygons. Keep the `look` block unless a knob below says not to.
@@ -86,6 +87,51 @@ Ripple centres are 40 random wet cells, seed 7. You do not place them.
 `motes`: a handful of `[x, y]`.
 
 Cloth pixels are chosen by colour inside each polygon: light (`L > clothMinL`, default 0.62) and either low chroma (`clothMaxChroma`, default 0.042) or blue (`clothBlueChroma`, default 0.12). A median filter cleans the mask. If the sheet is the same colour as the wall, this test fails. Tighten the polygon, or loosen those three look keys. A hand polygon alone does not keep a pixel the test rejected.
+
+## Motion layers (`"profile": "layers"`)
+
+Motion is a list of layers, one per moving part, each of a physical **category**. Nothing is hardcoded per object: a fan, a pendulum and a door are all `rigid`. A new category is a new `type` in `prep_layers` (tools/pocketworld.py), one function in `layersLib` and one block in `layersMain` (src/shaders.js), plus a row here. Send it as a PR.
+
+Workflow:
+
+a. **Decompose** the reference into parts on `overlay.png`: what moves, what stays.
+b. **Classify** each moving part into one category below. Few moving elements. Life is the environment.
+c. **Mark the anchor or pivot**: the clothesline or branch line for soft parts, the grip / hinge / elbow for rigid parts.
+d. **Pick amplitude and rhythm** from the table. Every period is rounded to a whole number of cycles per 12 s loop.
+
+| `type` | for | keys (reference px unless noted) |
+|---|---|---|
+| `soft` | cloth, flags, hair, foliage, grass | `poly`, `line` [x0,y0,x1,y1] (anchor), `hem` (px from line to full swing; **negative = anchored at the bottom**, e.g. grass, a flame), `amp` cells, `phase` rad, `preset` `cloth` or `foliage`, optional `dir` degrees, `feather` px |
+| `rigid` | fan, arm, pendulum, branch, windmill, door | `poly` (ring or list of rings), `pivot` [x,y], `amp` deg (negative = counter-clockwise on screen), `bias` deg, `period` s, `phase` 0–1, `snap` 0–0.3 (quicker outbound stroke, softer return), `parent` (name of an earlier rigid part: the child rides on it) |
+| `path` | birds, clouds, boats | `poly`, `radius` [rx, ry] cells (a small figure-eight loop), `period`, `phase` |
+| `particles` | rain, snow, falling leaves, motes, steam | `kind`, `zone` rings (steam: `origin` [x,y]), `density` 0–1, `size` cells, `fall` cells per loop, `color` |
+| `waves` | water shimmer, ripples | `poly` (the wet area), `shimmer` 0–1, `ripples` 0–1 (13 per loop ≈ 0.92 s) |
+| `light` | lamp breathe or flicker, glints, shadow sway | `mode` `breathe` / `flicker` / `glint` / `shadow`, `poly`, `amp`, `period`, `sway` cells, `color`, `blur` px |
+
+At most 8 rigid/path parts, 4 lights, 4 particle layers.
+
+How each works:
+
+- **soft** warps the reference itself with a smooth weight field (zero on the anchor line, full at `hem`, feathered at the polygon edge). There is no colour test and no cut-out, so leaves and grass need no `clothMinL` / `clothMaxChroma` tricks and nothing tears. `foliage` adds a slow flutter that varies across the crown and drops the cloth hem lift.
+- **rigid / path** parts are cut out by `poly` ∩ ink, minus `still`; the hole is inpainted in prep. The shader samples the part through the inverse transform about the pivot, so it moves as one piece and draws over whatever is behind it. Angle is `bias + amp · ease(u)`: 0 at t = 0 (the reference pose), peak, then back. `snap` warps time so the first half is quicker. A `parent` composes transforms: the child rotates about its own pivot, then follows the parent.
+- **particles, waves, light** are the bus-stop and rooftop effects, exposed as layers.
+
+`still` (one ring or a list) protects pixels from every layer. `detail` rings dither finer.
+
+**Faces and hands.** Put every face, and every hand that does not hold a moving part, in `still`. A face at 260 cells is a few cells: it reads by being exactly the reference, so keep it expressive rather than trying to sharpen it, and never warp or rotate it. A hand that holds a rigid part goes with the part (the chess fan's hand rides with the fan).
+
+**Out of scope for now:** a pose that is not in the reference. A part only moves around where it was drawn: the chess man's fan swings near his face, it cannot move from his side to his chest. Change the still instead.
+
+Tuning per category:
+
+- **soft** — too stiff: raise `amp` (foliage 1–1.3 cells, cloth 1.6–3.5). The anchor line moves: the `line` is on the wrong side, or `hem` sign is wrong. Edge of a crown shears: grow `poly` or raise `feather`. Neighbours in lockstep: spread `phase` by 0.6–2.
+- **rigid** — keep 2–5° for a breath or a branch, 15–25° for a fan or a pendulum. A ghost of the part at rest: grow `poly` a few pixels. The part drags a bit of shirt along: tighten `poly` (ink inside it moves). The revealed hole looks smeared: lower `amp`; the inpaint is diffusion. Wrong direction: flip the sign of `amp`. Too mechanical: `snap` 0.15–0.25, chain a small parent swing (forearm 3–5°).
+- **path** — `radius` 2–6 cells; a bird or a cloud should never leave the page.
+- **particles** — density 0.05–0.15 for leaves, 0.3–0.5 for snow. Too busy: lower `density` before `size`. Leaves `fall` 48–96 cells per loop, snow 96–160.
+- **waves** — shimmer 0.6–1, ripples 0.5–1. Ripples land on random wet cells (seed 7).
+- **light** — `amp` 0.08–0.15. A flicker that strobes is too strong: halve `amp`. Shadow `sway` 1–2 cells, period 4–6 s.
+
+Prep writes `base`, `fill`, `mask` (coverage, detail, fill coverage, hole), `soft`, `soft2` (preset, direction, wet), `part` and `pa0`/`pa1` (per-part alpha), `light`, `zone`. The manifest carries the part pivots, periods and parents; the player computes each part's transform every frame.
 
 ## The shader
 
@@ -188,6 +234,7 @@ The approved bus stop, measured on its MP4 at 260² with an RGB sum threshold of
 - Folds are baked into the cloth layer. They travel with the warp. They do not re-form.
 - k-means++ is seed-stable only for a bit-identical source. A re-saved jpeg can reshuffle clusters. Lock `palette` once the look is approved.
 - The shader's palette array is 24. Prep refuses a longer list.
+- `layers`: a rigid part reveals an inpainted hole; it reads well for a fan over a shirt, less well for a big part over a detailed wall. Overlapping soft polygons do not blend: the stronger weight wins per cell.
 
 ## Files
 
@@ -195,9 +242,10 @@ The approved bus stop, measured on its MP4 at 260² with an RGB sum threshold of
 |---|---|
 | `tools/pocketworld.py` | prep, overlay, suggest, contact sheet, metric |
 | `cli/pocketworld.js` | `prep`, `render`, `overlay`, `suggest`, `dev` |
-| `src/shaders.js` | motion layers and the two composites |
+| `src/shaders.js` | motion library and the three composites (`layers`, `rain`, `laundry`) |
 | `src/player.js` | `mount(canvas, manifestUrl)` |
 | `src/element.js` | `<pocket-world>` |
 | `examples/rain-bus-stop` | approved rain scene |
 | `examples/rooftop-laundry` | approved cloth scene |
+| `examples/chess-under-tree` | `layers` test scene (rigid fan, foliage) |
 | `experimental/sdf/` | retired procedural figures |

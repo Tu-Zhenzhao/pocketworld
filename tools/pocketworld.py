@@ -182,7 +182,7 @@ def profile_of(cfg):
         return 'laundry'
     if 'polygons' in cfg:
         return 'rain'
-    raise SystemExit('scene.json needs "profile": "rain" or "laundry"')
+    raise SystemExit('scene.json needs "profile": "layers", "rain" or "laundry"')
 
 # ---------------------------------------------------------------- rain
 def prep_rain(cfg, scene):
@@ -475,7 +475,7 @@ def prep_laundry(cfg, scene):
     earW = down(poly([cp['ear']], 1, grow=int(2 * S)))
 
     hole = (clothAl > .03) | (catA > .03) | ((down(poly([cfg['still']], grow=3)) > .03) & (pid >= 0))
-    hole = hole | np.roll(hole, 1, 0) | np.roll(hole, -1, 0) | np.roll(hole, 1, 1) | np.roll(hole, -1, 1)
+
     fill = inpaint(base, hole, 200)
     fillCov = inpaint(covS, hole, 200)
 
@@ -525,6 +525,197 @@ def prep_laundry(cfg, scene):
     Image.fromarray(np.array(pal_out, np.uint8)[None].repeat(24, 0).repeat(24, 1)).save(os.path.join(out, 'palette.png'))
     print('laundry', 'grid', G, 'colours', len(pal_out), 'locked' if locked else 'k-means', 'cloth cells', int((clothA > .5).sum()), 'S', round(S, 3))
 
+# ---------------------------------------------------------------- layers (generic)
+LIGHT_MODES = {'breathe': 0, 'flicker': 1, 'glint': 2, 'shadow': 3}
+PARTICLE_KINDS = {'rain': 0, 'snow': 1, 'leaves': 2, 'motes': 3, 'steam': 4}
+PARTICLE_COLOUR = {'rain': [.80, .85, .92], 'snow': [.97, .97, .98], 'leaves': [.55, .62, .30],
+                   'motes': [1., .97, .88], 'steam': [.93, .94, .95]}
+PARTICLE_SIZE = {'rain': 1, 'snow': .7, 'leaves': .9, 'motes': .55, 'steam': 1}
+
+def _rings_of(v):
+    """A single ring or a list of rings -> list of rings."""
+    if not v:
+        return []
+    return [v] if isinstance(v[0][0], (int, float)) else v
+
+def prep_layers(cfg, scene):
+    """Generic profile. Motion by physical category, see SKILL.md 'Motion layers'."""
+    lk = look_of(cfg)
+    G, K = int(lk['grid']), int(lk['K'])
+    out = os.path.join(scene, 'build')
+    os.makedirs(out, exist_ok=True)
+    src = open_ref(cfg)
+    W, H = src.size
+    S = W / G
+    loop = float(cfg.get('loopSeconds', 12))
+    sat, con = float(lk.get('saturation', 1)), float(lk.get('contrast', 1))
+    LIFT, CHR = float(lk.get('lift', 1)), float(lk.get('chroma', 1))
+    poly = lambda rings, blur=0, grow=0: poly_image((W, H), _rings_of(rings), blur, grow)
+    down = lambda im: down_image(im, G)
+
+    def grade(c):
+        l = (c @ LUMA)[..., None]
+        c = np.clip(l + (c - l) * sat, 0, 255)
+        c = np.clip((c - 128) * con + 128, 0, 255)
+        L = oklab(c)
+        L[..., 0] = np.clip(L[..., 0], 0, 1) ** LIFT
+        L[..., 1:] *= CHR
+        return np.clip(from_oklab(L), 0, 255)
+
+    a0 = np.asarray(src).astype(np.float32)
+    kuwa = int(lk.get('kuwa', 0))
+    a = a0
+    for _ in range(int(lk.get('passes', 1)) if kuwa > 0 else 0):
+        a = kuwahara(a, kuwa)
+    ink = np.clip((255 - a.min(2) - 6) / 18.0, 0, 1)
+    cov = down(ink * 255)
+    rgb = np.clip(np.stack([down(a[..., c] * ink) for c in range(3)], -1) / np.maximum(cov[..., None], 1e-4) * 255, 0, 255)
+    rgb = grade(rgb)
+    rgb[cov < .02] = 255
+    yg, xg = (np.mgrid[0:G, 0:G] + .5) * S
+
+    layers = cfg.get('layers', [])
+    by = lambda t: [L for L in layers if L['type'] == t]
+    still_rings = _rings_of(cfg.get('still'))
+    stillRef = (np.asarray(poly(still_rings, grow=2)) > 127) if still_rings else np.zeros((H, W), bool)
+    stillA = down(poly(still_rings, 1, grow=int(S))) if still_rings else np.zeros((G, G))
+    detail = down(poly(still_rings + _rings_of(cfg.get('detail')), 2)) if (still_rings or cfg.get('detail')) else np.zeros((G, G))
+
+    locked = cfg.get('palette')
+    if locked:
+        pal_out = locked
+    else:
+        sel = cov > .5
+        X = oklab(rgb[sel]) * CH
+        keys = [oklab(grade(np.median(a[ky - 3:ky + 4, kx - 3:kx + 4].reshape(-1, 3), 0)[None]))[0] * CH
+                for (kx, ky) in cfg.get('keyColours', [])]
+        pal = kmeans(X, cov[sel] * (1 + 6 * detail[sel]), np.array(keys).reshape(-1, 3), K)
+        pal_out = pal.astype(int).tolist() + [[255, 255, 255]]
+    if len(pal_out) > 24:
+        raise SystemExit(f'palette has {len(pal_out)} entries; the shader holds 24 (lower K)')
+
+    cov_flat = (cov >= .5).astype(np.float32)
+    cont = np.where(cov_flat[..., None] > 0, rgb, 255.)
+    hz = float(lk.get('haze', 0.3))
+    cw = gblur(cov_flat, hz)
+    soft_c = gblur(cont * cov_flat[..., None], hz) / np.maximum(cw[..., None], 1e-3)
+    sharp = gblur(cont * cov_flat[..., None], hz * .35) / np.maximum(gblur(cov_flat, hz * .35)[..., None], 1e-3)
+    base = soft_c * (1 - detail[..., None]) + sharp * detail[..., None]
+    base[cw < .02] = 255
+    covS = np.maximum(cov_flat, np.clip(gblur(cov_flat, float(lk.get('covBlur', 1))) * 1.1, 0, .6))
+
+    # 1. soft deform: a smooth weight field, warped in the shader. No cut-out, so no hole.
+    soft = np.zeros((G, G, 4))
+    soft2 = np.zeros((G, G, 4))
+    best = np.zeros((G, G))
+    for L in by('soft'):
+        foliage = L.get('preset', 'cloth') == 'foliage'
+        reg = down(poly(L['poly'], blur=float(L.get('feather', 3 * S)), grow=int(2 * S))) * (1 - stillA)
+        x0, y0, x1, y1 = L['line']
+        s_ = np.clip(((xg - x0) * (x1 - x0) + (yg - y0) * (y1 - y0)) / ((x1 - x0) ** 2 + (y1 - y0) ** 2 + 1e-6), -.2, 1.2)
+        w = np.clip((yg - (y0 + (y1 - y0) * s_)) / L['hem'], 0, 1.15) * reg
+        sel = w > best
+        best[sel] = w[sel]
+        ang = float(L.get('dir', 166 if foliage else 153.4)) % 360
+        soft[sel] = np.stack([w[sel] / 1.15, (s_[sel] + .2) / 1.4, np.full(sel.sum(), L['amp'] / 4),
+                              np.full(sel.sum(), (L.get('phase', 0) % 6.2832) / 6.2832)], -1)
+        soft2[sel, 0] = float(foliage)
+        soft2[sel, 1] = ang / 360
+
+    # 2 + 3. rigid and path parts: cut out by mask + ink, inpainted behind
+    parts = by('rigid') + by('path')
+    if len(parts) > 8:
+        raise SystemExit('at most 8 rigid / path parts')
+    names = [P.get('name', f'part{i}') for i, P in enumerate(parts)]
+    pa = np.zeros((G, G, 8))
+    mparts = []
+    for i, P in enumerate(parts):
+        pm = (np.asarray(poly(P['poly'])) > 127) & ~stillRef
+        pa[..., i] = down(pm * ink * 255)
+        par = P.get('parent')
+        if par is not None and (par not in names or names.index(par) >= i):
+            raise SystemExit(f'{names[i]}: parent {par} must be listed before it')
+        k = max(1, round(loop / float(P.get('period', 4))))
+        mp = dict(kind=P['type'], parent=names.index(par) if par else -1, k=k,
+                  phase=float(P.get('phase', 0)))
+        if P['type'] == 'rigid':
+            mp.update(pivot=[P['pivot'][0] / S, P['pivot'][1] / S], amp=float(np.radians(P.get('amp', 15))),
+                      bias=float(np.radians(P.get('bias', 0))), snap=float(P.get('snap', 0)))
+        else:
+            mp.update(radius=list(P.get('radius', [4, 1])))
+        mparts.append(mp)
+    any_part = pa.max(-1)
+    pin = any_part > .15
+    partCol = np.where(pin[..., None], base, inpaint(np.where(pin[..., None], base, 0), ~pin, it=6))
+    partCov = np.where(pin, covS, inpaint(np.where(pin, covS, 0), ~pin, it=6))
+    hole = any_part > .03
+
+    fill = inpaint(base, hole, 200) if hole.any() else base
+    fillCov = inpaint(covS, hole, 200) if hole.any() else covS
+    # a revealed hole is either clearly paper or clearly ground, never a speckled half-tone
+    fillCov = np.where(hole, np.clip((fillCov - .35) / .3, 0, 1), fillCov)
+
+    # 6. light
+    lights = by('light')[:4]
+    light = np.zeros((G, G, 4))
+    mlights = []
+    for i, L in enumerate(lights):
+        light[..., i] = down(poly(L['poly'], blur=float(L.get('blur', 3 * S)))) * (1 - stillA * L.get('spareStill', 0))
+        mode = LIGHT_MODES[L.get('mode', 'breathe')]
+        mlights.append(dict(mode=mode, k=max(1, round(loop / float(L.get('period', 6)))),
+                            amp=float(L.get('amp', .15 if mode < 3 else .12)), sway=float(L.get('sway', 0)),
+                            color=list(L.get('color', [1, .86, .58]))))
+
+    # 4. particles
+    zone = np.zeros((G, G, 4))
+    mpart = []
+    for i, Q in enumerate(by('particles')[:4]):
+        kind = Q.get('kind', 'motes')
+        if kind == 'steam':
+            ox, oy = Q['origin']
+            zone[..., i] = 1
+            origin = [ox / S, oy / S]
+        else:
+            zone[..., i] = down(poly(Q['zone'], blur=float(Q.get('blur', 8 * S))))
+            origin = [0, 0]
+        rep = 16 * max(1, round(float(Q.get('fall', 160)) / 16))
+        mpart.append(dict(kind=PARTICLE_KINDS[kind], dens=float(Q.get('density', .4)),
+                          size=float(Q.get('size', PARTICLE_SIZE[kind])), rep=rep,
+                          color=list(Q.get('color', PARTICLE_COLOUR[kind])), origin=origin))
+
+    # 5. surface waves
+    waves = by('waves')
+    wet = down(poly(sum([_rings_of(L['poly']) for L in waves], []), 2)) if waves else np.zeros((G, G))
+    soft2[..., 2] = wet
+    ripples = []
+    if waves:
+        wy, wx = np.nonzero(wet > .85)
+        if len(wx):
+            r2 = np.random.default_rng(7)
+            ripples = [[float(wx[i]) + .5, float(wy[i]) + .5] for i in r2.choice(len(wx), 40, replace=len(wx) < 40)]
+    wave = [float(max([L.get('shimmer', 1) for L in waves] or [0])), float(max([L.get('ripples', 1) for L in waves] or [0]))]
+
+    outs = {
+        'base': (base, 'RGB'),
+        'fill': (fill, 'RGB'),
+        'mask': (np.dstack([covS, detail, fillCov, hole * 1.]) * 255, 'RGBA'),
+        'soft': (soft * 255, 'RGBA'),
+        'soft2': (soft2 * 255, 'RGBA'),
+        'part': (np.dstack([partCol, partCov * 255]), 'RGBA'),
+        'pa0': (pa[..., :4] * 255, 'RGBA'),
+        'pa1': (pa[..., 4:] * 255, 'RGBA'),
+        'light': (light * 255, 'RGBA'),
+        'zone': (zone * 255, 'RGBA'),
+    }
+    for k, (v, md) in outs.items():
+        save_png(os.path.join(out, k + '.png'), v, md)
+    manifest = dict(profile='layers', grid=G, loop=loop, palette=pal_out, spread=float(lk.get('spread', 0.06)),
+                    parts=mparts, lights=mlights, particles=mpart, wave=wave, ripples=ripples, cellRef=S)
+    write_manifest(out, manifest, outs)
+    Image.fromarray(np.array(pal_out, np.uint8)[None].repeat(24, 0).repeat(24, 1)).save(os.path.join(out, 'palette.png'))
+    print('layers', 'grid', G, 'colours', len(pal_out), 'locked' if locked else 'k-means',
+          'soft', len(by('soft')), 'parts', len(parts), 'lights', len(lights), 'particles', len(mpart), 'S', round(S, 3))
+
 def cmd_prep(scene):
     cfg = load_cfg(scene)
     profile = profile_of(cfg)
@@ -532,6 +723,8 @@ def cmd_prep(scene):
         prep_rain(cfg, scene)
     elif profile == 'laundry':
         prep_laundry(cfg, scene)
+    elif profile == 'layers':
+        prep_layers(cfg, scene)
     else:
         raise SystemExit(f'unknown profile {profile}')
 
@@ -557,13 +750,25 @@ def _rings(cfg):
     for pc in cfg.get('cloth') or []:
         yield pc['name'], pc['poly']
         yield pc['name'] + ' line', [pc['line'][:2], pc['line'][2:]]
-    if 'still' in cfg:
+    if 'still' in cfg and cfg.get('profile') != 'layers':
         yield 'still', cfg['still']
     if 'cat' in cfg:
         yield 'cat', cfg['cat']['poly']
         yield 'ear', cfg['cat']['ear']
     for zn in cfg.get('shadows') or []:
         yield 'shadow ' + zn['piece'], zn['poly']
+    if cfg.get('profile') == 'layers':
+        for i, r in enumerate(_rings_of(cfg.get('still'))):
+            yield f'still{i}', r
+        for L in cfg.get('layers') or []:
+            nm = L.get('name', L['type'])
+            for r in _rings_of(L.get('poly') or L.get('zone')):
+                yield nm, r
+            if 'line' in L:
+                yield nm + ' line', [L['line'][:2], L['line'][2:]]
+            for key in ('pivot', 'origin'):
+                if key in L:
+                    yield f'{nm} {key}', [L[key]]
 
 def cmd_overlay(scene, step):
     cfg = load_cfg(scene)
@@ -765,7 +970,11 @@ def _subject_center(cfg, grid, scale, W):
     for key in ('umbrella', 'man'):
         if key in P and P[key] and isinstance(P[key][0][0], (int, float)):
             pts.extend(P[key])
-    if 'still' in cfg:
+    if cfg.get('profile') == 'layers':
+        for L in cfg.get('layers') or []:
+            if L['type'] in ('rigid', 'path'):
+                pts.extend(sum(_rings_of(L['poly']), []))
+    elif 'still' in cfg:
         pts.extend(cfg['still'])
     if 'cat' in cfg:
         pts.extend(cfg['cat']['poly'])
