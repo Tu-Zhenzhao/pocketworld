@@ -641,7 +641,8 @@ def prep_layers(cfg, scene):
                   phase=float(P.get('phase', 0)))
         if P['type'] == 'rigid':
             mp.update(pivot=[P['pivot'][0] / S, P['pivot'][1] / S], amp=float(np.radians(P.get('amp', 15))),
-                      bias=float(np.radians(P.get('bias', 0))), snap=float(P.get('snap', 0)))
+                      bias=float(np.radians(P.get('bias', 0))), snap=float(P.get('snap', 0)),
+                      duty=float(P.get('duty', 1.0)))
         else:
             mp.update(radius=list(P.get('radius', [4, 1])))
         mparts.append(mp)
@@ -736,7 +737,8 @@ def _lint_layers(cfg, lk, S):
         pts = np.asarray(sum(_rings_of(L['poly']), []), np.float32)
         r = float(np.hypot(*(pts - np.asarray(L['pivot'], np.float32)).T).max())
         sweep = abs(np.radians(float(L.get('amp', 15)))) * r / S
-        print(f"rigid {L.get('name', '?')}: amp {L.get('amp', 15)} deg, reach {r:.0f} px, sweep {sweep:.2f} cells at the tip")
+        duty_str = f", duty {L['duty']}" if 'duty' in L else ""
+        print(f"rigid {L.get('name', '?')}: amp {L.get('amp', 15)} deg, reach {r:.0f} px, sweep {sweep:.2f} cells at the tip{duty_str}")
 
 PART_COLS = {'rigid': (220, 60, 60), 'path': (60, 120, 220), 'soft': (40, 150, 80),
              'light': (210, 150, 30), 'particles': (140, 80, 200)}
@@ -797,7 +799,7 @@ def parts_sheet(cfg, scene, src, ink, stillRef, S):
         cd.text((TILE + 2 * PAD, TH + 2 * PAD), nm, fill=PART_COLS[t], font=font)
         info = [t + (f" ({L.get('kind') or L.get('mode') or L.get('preset', '')})" if t != 'rigid' else '')]
         if t == 'rigid':
-            info += [f"amp {L.get('amp', 15)} deg", f"pivot {L['pivot']}"] + ([f"parent {L['parent']}"] if L.get('parent') else [])
+            info += [f"amp {L.get('amp', 15)} deg", f"pivot {L['pivot']}"] + ([f"duty {L['duty']}"] if 'duty' in L else []) + ([f"parent {L['parent']}"] if L.get('parent') else [])
         elif t == 'soft':
             info += [f"amp {L.get('amp')} cells", f"hem {L.get('hem')}"]
         info += [f'x {x0}-{x1}', f'y {y0}-{y1}', f'zoom x{z:.1f}']
@@ -1123,8 +1125,10 @@ def cmd_phases(scene):
         x0, y0, x1, y1 = int(max(0, x0)), int(max(0, y0)), int(min(side, x1)), int(min(side, y1))
         z = max(1.0, 360 / max(x1 - x0, y1 - y0))
         tiles = []
+        duty = float(L.get('duty', 1.0)) if t == 'rigid' else 1.0
         for j in range(4):
-            tt = ((j / 4 - ph0) % 1) * loop / k
+            u_rel = (j / 3.0) * duty if duty < 1.0 else j / 4.0
+            tt = ((u_rel - ph0) % 1) * loop / k
             fn = os.path.join(out, f'_ph{j}.png')
             _ffmpeg(['-ss', f'{tt:.4f}', '-i', mp4, '-frames:v', '1', fn])
             fr = Image.open(fn).convert('RGB').crop((x0, y0, x1, y1))
