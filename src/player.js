@@ -34,6 +34,42 @@ function flat(list, n) {
   return f;
 }
 
+// Affine maps as [a, b, c, d, tx, ty]: x' = a x + c y + tx, y' = b x + d y + ty.
+const mul = (m, n) => [
+  m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+  m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+  m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5],
+];
+function inv(m) {
+  const det = m[0] * m[3] - m[1] * m[2];
+  const a = m[3] / det, b = -m[1] / det, c = -m[2] / det, d = m[0] / det;
+  return [a, b, c, d, -(a * m[4] + c * m[5]), -(b * m[4] + d * m[5])];
+}
+// 0 at u = 0, 1 at the far end of the stroke, back to 0 at u = 1. snap (0..0.3) makes the
+// outbound half quicker and the return softer. Smooth (C1) across the loop seam.
+export function stroke(u, snap = 0) {
+  const s = Math.min(0.3, Math.max(-0.3, snap));
+  return 0.5 - 0.5 * Math.cos(2 * Math.PI * (u + s * Math.sin(Math.PI * u)));
+}
+// Forward transform of every rigid / path part at time t. Parents come before children.
+export function partTransforms(parts, t, loop) {
+  const out = [];
+  for (const pt of parts) {
+    const u = (((pt.k * t) / loop + pt.phase) % 1 + 1) % 1;
+    let L;
+    if (pt.kind === "path") {
+      const [rx, ry] = pt.radius;
+      L = [1, 0, 0, 1, rx * Math.sin(2 * Math.PI * u), -ry * Math.sin(4 * Math.PI * u)];
+    } else {
+      const th = pt.bias + pt.amp * stroke(u, pt.snap);
+      const cs = Math.cos(th), sn = Math.sin(th), [px, py] = pt.pivot;
+      L = [cs, sn, -sn, cs, px - cs * px + sn * py, py - sn * px - cs * py];
+    }
+    out.push(pt.parent >= 0 ? mul(out[pt.parent], L) : L);
+  }
+  return out;
+}
+
 async function resolveManifest(src) {
   if (typeof src === "string") {
     const res = await fetch(src);
@@ -95,6 +131,18 @@ export async function mount(canvas, src, opts = {}) {
     gl.uniform1i(U("uND"), Math.min(12, manifest.drips.length));
     gl.uniform2fv(U("uRip"), flat(manifest.ripples, 80));
     gl.uniform2f(U("uPivot"), manifest.pivot[0], manifest.pivot[1]);
+  } else if (profile === "layers") {
+    const L = manifest.lights || [], Q = manifest.particles || [];
+    gl.uniform1i(U("uNP"), Math.min(8, (manifest.parts || []).length));
+    gl.uniform1i(U("uNL"), Math.min(4, L.length));
+    gl.uniform1i(U("uNQ"), Math.min(4, Q.length));
+    gl.uniform4fv(U("uLp"), flat(L.map((l) => [l.mode, l.k, l.amp, l.sway]), 16));
+    gl.uniform3fv(U("uLc"), flat(L.map((l) => l.color), 12));
+    gl.uniform4fv(U("uPp"), flat(Q.map((q) => [q.kind, q.dens, q.size, q.rep]), 16));
+    gl.uniform3fv(U("uPc"), flat(Q.map((q) => q.color), 12));
+    gl.uniform2fv(U("uPo"), flat(Q.map((q) => q.origin), 8));
+    gl.uniform2fv(U("uRip"), flat(manifest.ripples || [], 80));
+    gl.uniform2fv(U("uWave"), flat(manifest.wave || [0, 0], 2));
   } else {
     gl.uniform2fv(U("uMote"), flat(manifest.motes || [], 16));
     gl.uniform1i(U("uNM"), Math.min(8, (manifest.motes || []).length));
@@ -126,6 +174,11 @@ export async function mount(canvas, src, opts = {}) {
     gl.useProgram(pr);
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform1f(U("uT"), t);
+    if (profile === "layers" && manifest.parts?.length) {
+      const X = partTransforms(manifest.parts, t, loop).map(inv);
+      gl.uniform4fv(U("uXa"), flat(X.map((m) => m.slice(0, 4)), 32));
+      gl.uniform2fv(U("uXt"), flat(X.map((m) => m.slice(4)), 16));
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 

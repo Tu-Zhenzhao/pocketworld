@@ -17,7 +17,7 @@ import puppeteer from "puppeteer-core";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PY = process.env.PYTHON || "python3";
 const TOOL = path.join(ROOT, "tools", "pocketworld.py");
-const SCENES = ["examples/rain-bus-stop", "examples/rooftop-laundry"];
+const SCENES = ["examples/rain-bus-stop", "examples/rooftop-laundry", "examples/chess-under-tree"];
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -50,6 +50,7 @@ function python(args) {
 function chromePath() {
   const candidates = [
     process.env.CHROME,
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable",
     "/usr/bin/chromium",
@@ -169,7 +170,9 @@ function help() {
 }
 
 const [cmd, ...rest] = process.argv.slice(2);
-const positionals = rest.filter((a) => !a.startsWith("--"));
+// flags that take a value; their value is not a scene path
+const VALUE_FLAGS = ["--step", "--port"];
+const positionals = rest.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.includes(rest[i - 1]));
 const portFlag = rest.indexOf("--port");
 const port = portFlag >= 0 ? Number(rest[portFlag + 1]) : 8787;
 
