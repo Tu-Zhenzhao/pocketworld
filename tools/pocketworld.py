@@ -548,6 +548,7 @@ def prep_layers(cfg, scene):
     W, H = src.size
     S = W / G
     loop = float(cfg.get('loopSeconds', 12))
+    _lint_layers(cfg, lk, S)
     sat, con = float(lk.get('saturation', 1)), float(lk.get('contrast', 1))
     LIFT, CHR = float(lk.get('lift', 1)), float(lk.get('chroma', 1))
     poly = lambda rings, blur=0, grow=0: poly_image((W, H), _rings_of(rings), blur, grow)
@@ -715,6 +716,108 @@ def prep_layers(cfg, scene):
     Image.fromarray(np.array(pal_out, np.uint8)[None].repeat(24, 0).repeat(24, 1)).save(os.path.join(out, 'palette.png'))
     print('layers', 'grid', G, 'colours', len(pal_out), 'locked' if locked else 'k-means',
           'soft', len(by('soft')), 'parts', len(parts), 'lights', len(lights), 'particles', len(mpart), 'S', round(S, 3))
+    parts_sheet(cfg, scene, src, ink, stillRef, S)
+
+def _lint_layers(cfg, lk, S):
+    """Guardrails. Clamp a too-vivid look; warn about motion that will not read."""
+    for k in ('saturation', 'chroma'):
+        if float(lk.get(k, 1)) > 1.0:
+            print(f'WARNING look.{k} {lk[k]} > 1.0: clamped to 1.0 (layers wants a refined, low-saturation palette, 0.9-1.0)')
+            lk[k] = 1.0
+    for i, r in enumerate(_rings_of(cfg.get('still'))):
+        a = np.asarray(r, np.float32)
+        area = (a[:, 0].max() - a[:, 0].min()) * (a[:, 1].max() - a[:, 1].min())
+        if area > 90 * 90:
+            print(f'WARNING still{i} is {int(area)} px^2: still is for eyes, facial detail, small precise things. '
+                  'A whole figure in still never breathes; give it a breath layer instead.')
+    for L in cfg.get('layers', []):
+        if L['type'] != 'rigid':
+            continue
+        pts = np.asarray(sum(_rings_of(L['poly']), []), np.float32)
+        r = float(np.hypot(*(pts - np.asarray(L['pivot'], np.float32)).T).max())
+        sweep = abs(np.radians(float(L.get('amp', 15)))) * r / S
+        print(f"rigid {L.get('name', '?')}: amp {L.get('amp', 15)} deg, reach {r:.0f} px, sweep {sweep:.2f} cells at the tip")
+
+PART_COLS = {'rigid': (220, 60, 60), 'path': (60, 120, 220), 'soft': (40, 150, 80),
+             'light': (210, 150, 30), 'particles': (140, 80, 200)}
+
+def parts_sheet(cfg, scene, src, ink, stillRef, S):
+    """build/parts.png: every moving layer's cut-out (poly ∩ ink, minus still) on grey, zoomed,
+    with its pivot, plus a thumbnail of where the poly sits. Check that each tile IS the named object."""
+    ref = np.asarray(src).astype(np.float32)
+    W, H = src.size
+    TILE, TH, PAD = 300, 120, 10
+    font, small = _font(16), _font(12)
+    cards = []
+    for i, L in enumerate(cfg.get('layers', [])):
+        t = L['type']
+        if t == 'waves':
+            continue
+        rings = _rings_of(L.get('poly') or L.get('zone'))
+        nm = L.get('name', f'{t}{i}')
+        if not rings:  # steam: origin only
+            ox, oy = L['origin']
+            rings = [[[ox - 24, oy - 48], [ox + 24, oy - 48], [ox + 24, oy + 8], [ox - 24, oy + 8]]]
+        pm = np.asarray(poly_image((W, H), rings)) > 127
+        cut = pm & ~stillRef
+        if t in ('rigid', 'path', 'soft'):
+            cut &= ink > .3
+        pts = np.asarray(sum(rings, []), np.float32)
+        extra = [L[k] for k in ('pivot', 'origin') if k in L]
+        if 'line' in L:
+            extra += [L['line'][:2], L['line'][2:]]
+        allp = np.vstack([pts] + ([np.asarray(extra, np.float32)] if extra else []))
+        x0, y0 = np.floor(allp.min(0)) - 8
+        x1, y1 = np.ceil(allp.max(0)) + 8
+        x0, y0, x1, y1 = int(max(0, x0)), int(max(0, y0)), int(min(W, x1)), int(min(H, y1))
+        crop = np.where(cut[y0:y1, x0:x1, None], ref[y0:y1, x0:x1], np.array([150., 150, 150]))
+        z = min(TILE / (x1 - x0), TILE / (y1 - y0), 6.0)
+        tw, th_ = max(1, int((x1 - x0) * z)), max(1, int((y1 - y0) * z))
+        tile = Image.new('RGB', (TILE, TILE), (150, 150, 150))
+        tile.paste(Image.fromarray(crop.astype(np.uint8)).resize((tw, th_), Image.NEAREST), (0, 0))
+        td = ImageDraw.Draw(tile)
+        mp = lambda p: ((p[0] - x0) * z, (p[1] - y0) * z)
+        for r in rings:
+            td.polygon([mp(p) for p in r], outline=(255, 255, 255))
+        if 'line' in L:
+            td.line([mp(L['line'][:2]), mp(L['line'][2:])], fill=(40, 150, 80), width=2)
+        for k in ('pivot', 'origin'):
+            if k in L:
+                cx, cy = mp(L[k])
+                td.ellipse((cx - 6, cy - 6, cx + 6, cy + 6), fill=(255, 30, 30), outline=(255, 255, 255), width=2)
+        # thumbnail: whole reference, this poly outlined
+        th = src.resize((TH, TH), Image.BILINEAR)
+        thd = ImageDraw.Draw(th)
+        for r in rings:
+            thd.polygon([(p[0] * TH / W, p[1] * TH / H) for p in r], outline=PART_COLS[t], width=2)
+        card = Image.new('RGB', (TILE + TH + 3 * PAD, TILE + 2 * PAD), 'white')
+        card.paste(tile, (PAD, PAD))
+        card.paste(th, (TILE + 2 * PAD, PAD))
+        cd = ImageDraw.Draw(card)
+        cd.text((TILE + 2 * PAD, TH + 2 * PAD), nm, fill=PART_COLS[t], font=font)
+        info = [t + (f" ({L.get('kind') or L.get('mode') or L.get('preset', '')})" if t != 'rigid' else '')]
+        if t == 'rigid':
+            info += [f"amp {L.get('amp', 15)} deg", f"pivot {L['pivot']}"] + ([f"parent {L['parent']}"] if L.get('parent') else [])
+        elif t == 'soft':
+            info += [f"amp {L.get('amp')} cells", f"hem {L.get('hem')}"]
+        info += [f'x {x0}-{x1}', f'y {y0}-{y1}', f'zoom x{z:.1f}']
+        for j, line in enumerate(info):
+            cd.text((TILE + 2 * PAD, TH + 2 * PAD + 22 + 16 * j), line, fill=(60, 60, 60), font=small)
+        cards.append(card)
+    dest = os.path.join(scene, 'build', 'parts.png')
+    if not cards:
+        return
+    cols = 2 if len(cards) > 1 else 1
+    cw, ch = cards[0].size
+    rows = (len(cards) + cols - 1) // cols
+    head = 34
+    sheet = Image.new('RGB', (cw * cols, ch * rows + head), 'white')
+    ImageDraw.Draw(sheet).text((PAD, 8), 'parts: each tile must BE the named object (grey = not moving, red dot = pivot)',
+                               fill=(30, 30, 30), font=font)
+    for i, c in enumerate(cards):
+        sheet.paste(c, ((i % cols) * cw, head + (i // cols) * ch))
+    sheet.save(dest)
+    print('wrote', dest, '<- open it: each tile must be the object it is named after')
 
 def cmd_prep(scene):
     cfg = load_cfg(scene)
@@ -986,6 +1089,60 @@ def _subject_center(cfg, grid, scale, W):
     c = arr.mean(0)
     return float(c[0] / S * scale), float(c[1] / S * scale)
 
+def cmd_phases(scene):
+    """out/<name>_phases.png: each rigid part (and each cloth/breath soft part) at 4 phases of its
+    stroke, cropped from out/loop.mp4. Open it: the motion must read as the intended action."""
+    cfg = load_cfg(scene)
+    if cfg.get('profile') != 'layers':
+        return
+    out = os.path.join(scene, 'out')
+    mp4 = os.path.join(out, 'loop.mp4')
+    if not os.path.exists(mp4):
+        raise SystemExit(f'missing {mp4}: render first')
+    grid = int(json.load(open(os.path.join(scene, 'build', 'manifest.json')))['grid'])
+    W = open_ref(cfg).size[0]
+    loop = float(cfg.get('loopSeconds', 12))
+    f = 4 * grid / W  # reference px -> mp4 px
+    font = _font(16)
+    for L in cfg.get('layers', []):
+        t = L['type']
+        if not (t == 'rigid' or (t == 'soft' and L.get('preset', 'cloth') != 'foliage')):
+            continue
+        nm = L.get('name', t)
+        pts = np.asarray(sum(_rings_of(L['poly']), []), np.float32)
+        if t == 'rigid':
+            k = max(1, round(loop / float(L.get('period', 4))))
+            ph0 = float(L.get('phase', 0))
+            r = float(np.hypot(*(pts - np.asarray(L['pivot'], np.float32)).T).max())
+            m = r * abs(np.radians(float(L.get('amp', 15)))) + 12
+        else:
+            k, ph0, m = 3, float(L.get('phase', 0)) / (2 * np.pi), 12
+        x0, y0 = (pts.min(0) - m) * f
+        x1, y1 = (pts.max(0) + m) * f
+        side = 4 * grid
+        x0, y0, x1, y1 = int(max(0, x0)), int(max(0, y0)), int(min(side, x1)), int(min(side, y1))
+        z = max(1.0, 360 / max(x1 - x0, y1 - y0))
+        tiles = []
+        for j in range(4):
+            tt = ((j / 4 - ph0) % 1) * loop / k
+            fn = os.path.join(out, f'_ph{j}.png')
+            _ffmpeg(['-ss', f'{tt:.4f}', '-i', mp4, '-frames:v', '1', fn])
+            fr = Image.open(fn).convert('RGB').crop((x0, y0, x1, y1))
+            os.remove(fn)
+            fr = fr.resize((int(fr.width * z), int(fr.height * z)), Image.NEAREST)
+            tl = Image.new('RGB', (fr.width, fr.height + 24), 'white')
+            tl.paste(fr, (0, 24))
+            ImageDraw.Draw(tl).text((4, 3), f'{nm} {j}/4  t={tt:.2f}s', fill=(40, 40, 40), font=font)
+            tiles.append(tl)
+        strip = Image.new('RGB', (sum(x.width for x in tiles) + 8 * 3, tiles[0].height), 'white')
+        x = 0
+        for tl in tiles:
+            strip.paste(tl, (x, 0))
+            x += tl.width + 8
+        dest = os.path.join(out, f'{nm}_phases.png')
+        strip.save(dest)
+        print('wrote', dest)
+
 def cmd_present(scene):
     cfg = load_cfg(scene)
     man_path = os.path.join(scene, 'build', 'manifest.json')
@@ -1053,6 +1210,7 @@ def cmd_present(scene):
     print(json.dumps(m, indent=1))
     for name in ('loop.mp4', 'loop.gif', 'compare.png', 'contact.png', 'contact_detail.png', 'metrics.json'):
         print('wrote', os.path.join(out, name))
+    cmd_phases(scene)
     # drop the scratch frames
     for fn in os.listdir(tmp):
         os.remove(os.path.join(tmp, fn))
@@ -1070,6 +1228,8 @@ def main():
     s.add_argument('scene')
     r = sub.add_parser('present', help='gif, compare, contact sheet, smoothness metric from out/loop.mp4')
     r.add_argument('scene')
+    ph = sub.add_parser('phases', help='out/<part>_phases.png: each rigid / breath part at 4 phases')
+    ph.add_argument('scene')
     m = sub.add_parser('metrics', help='smoothness / seam numbers for an mp4')
     m.add_argument('mp4')
     m.add_argument('--grid', type=int, default=260)
@@ -1082,6 +1242,8 @@ def main():
         cmd_suggest(scene_dir_of(args.scene))
     elif args.cmd == 'present':
         cmd_present(scene_dir_of(args.scene))
+    elif args.cmd == 'phases':
+        cmd_phases(scene_dir_of(args.scene))
     elif args.cmd == 'metrics':
         print(json.dumps(metrics_of(args.mp4, args.grid), indent=1))
 
