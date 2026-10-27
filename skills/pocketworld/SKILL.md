@@ -157,6 +157,10 @@ How each works:
 
 `still` (one ring or a list), in `layers`, is masked out of all motion: soft weight is zero there and it is cut out of every rigid part. (In `laundry`, `still` is different: it is an occluder drawn back on top of the cloth.) `detail` rings dither finer.
 
+`erase` (or `inpaint`, one ring or a list), in `layers`, removes painted features from the reference that should not appear in the animation (e.g. frozen smoke plumes, static steam columns, or stray marks). Prep inpaints both RGB and diorama coverage across the erased polygon via 4-neighbour diffusion into the surrounding background and paper white.
+- **Removing painted smoke or steam**: When the user requests removing smoke ("去掉烟"), trace the painted plume into `erase`. Simply deleting motion layers leaves a static grey column frozen above the fire or cup.
+- **Replacing painted plume with particles**: Put the painted plume into `erase` so it disappears from the base, then add a `particles` layer (`kind: "steam"`) anchored at the origin.
+
 **`still` is small.** Use it only for eyes, facial detail and small precise things (a hand resting on a board). Never put a whole figure in `still`: the figure freezes, and a soft layer around it tears at the edge. Prep warns about a `still` ring larger than about 90×90 px.
 
 **Faces.** Put faces in `detail`, not `still`. A face at 260 cells is a few cells: it reads by being exactly the reference, so keep it expressive rather than sharpening it, and never rotate it. A hand that holds a rigid part goes with the part (the fan's hand rides with the fan).

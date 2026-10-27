@@ -391,6 +391,13 @@ def prep_laundry(cfg, scene):
     rgb[cov < .02] = 255
     yg, xg = (np.mgrid[0:G, 0:G] + .5) * S
 
+    erase_rings = _rings_of(cfg.get('erase') or cfg.get('inpaint'))
+    if erase_rings:
+        eraseA = down(poly(erase_rings, blur=1, grow=int(S))) > 0.05
+        rgb = inpaint(rgb, eraseA, 160)
+        cov = inpaint(cov, eraseA, 160)
+        rgb[cov < .02] = 255
+
     still = np.asarray(poly([cfg['still']], grow=2)) > 127
     Lab0 = oklab(a0.reshape(-1, 3)).reshape(H, W, 3)
     chroma = np.hypot(Lab0[..., 1], Lab0[..., 2])
@@ -575,6 +582,13 @@ def prep_layers(cfg, scene):
     rgb[cov < .02] = 255
     yg, xg = (np.mgrid[0:G, 0:G] + .5) * S
 
+    erase_rings = _rings_of(cfg.get('erase') or cfg.get('inpaint'))
+    if erase_rings:
+        eraseA = down(poly(erase_rings, blur=1, grow=int(S))) > 0.05
+        rgb = inpaint(rgb, eraseA, 160)
+        cov = inpaint(cov, eraseA, 160)
+        rgb[cov < .02] = 255
+
     layers = cfg.get('layers', [])
     by = lambda t: [L for L in layers if L['type'] == t]
     still_rings = _rings_of(cfg.get('still'))
@@ -716,7 +730,8 @@ def prep_layers(cfg, scene):
     write_manifest(out, manifest, outs)
     Image.fromarray(np.array(pal_out, np.uint8)[None].repeat(24, 0).repeat(24, 1)).save(os.path.join(out, 'palette.png'))
     print('layers', 'grid', G, 'colours', len(pal_out), 'locked' if locked else 'k-means',
-          'soft', len(by('soft')), 'parts', len(parts), 'lights', len(lights), 'particles', len(mpart), 'S', round(S, 3))
+          'soft', len(by('soft')), 'parts', len(parts), 'lights', len(lights), 'particles', len(mpart),
+          *(['erase', len(erase_rings)] if erase_rings else []), 'S', round(S, 3))
     parts_sheet(cfg, scene, src, ink, stillRef, S)
 
 def _lint_layers(cfg, lk, S):
@@ -725,6 +740,9 @@ def _lint_layers(cfg, lk, S):
         if float(lk.get(k, 1)) > 1.0:
             print(f'WARNING look.{k} {lk[k]} > 1.0: clamped to 1.0 (layers wants a refined, low-saturation palette, 0.9-1.0)')
             lk[k] = 1.0
+    erase_rings = _rings_of(cfg.get('erase') or cfg.get('inpaint'))
+    if erase_rings:
+        print(f"erase: {len(erase_rings)} polygon(s) inpainted in base and coverage")
     for i, r in enumerate(_rings_of(cfg.get('still'))):
         a = np.asarray(r, np.float32)
         area = (a[:, 0].max() - a[:, 0].min()) * (a[:, 1].max() - a[:, 1].min())
@@ -863,6 +881,8 @@ def _rings(cfg):
     for zn in cfg.get('shadows') or []:
         yield 'shadow ' + zn['piece'], zn['poly']
     if cfg.get('profile') == 'layers':
+        for i, r in enumerate(_rings_of(cfg.get('erase') or cfg.get('inpaint'))):
+            yield f'erase{i}', r
         for i, r in enumerate(_rings_of(cfg.get('still'))):
             yield f'still{i}', r
         for L in cfg.get('layers') or []:

@@ -201,3 +201,34 @@ Following the working method in `skills/pocketworld/SKILL.md`:
 - [x] **Visual Clarity**: No tears, holes, halos, or artifacts; faces and flame detail preserved.
 - [x] **Artifacts Rendered**: [`out/loop.mp4`](file:///Users/tzz/Documents/pocketworld/snow_v1/repo/examples/snow-campfire/out/loop.mp4), [`out/loop.gif`](file:///Users/tzz/Documents/pocketworld/snow_v1/repo/examples/snow-campfire/out/loop.gif), [`out/compare.png`](file:///Users/tzz/Documents/pocketworld/snow_v1/repo/examples/snow-campfire/out/compare.png), [`out/dog_ear_phases.png`](file:///Users/tzz/Documents/pocketworld/snow_v1/repo/examples/snow-campfire/out/dog_ear_phases.png).
 
+---
+
+## 6. Feedback Round F3: Erasing Painted Frozen Smoke Column
+
+### 6.1 User Feedback (Verbatim)
+> 很好 现在让Gemini 把那个烟的问题解决好！
+
+Context & Diagnosis:
+While `smoke` deformation and `smoke_particles` were removed in Round F1/F2, the reference watercolor painting itself contains a painted grey smoke plume (`X: [525, 565], Y: [260, 545]`). Because the painting is downsampled as the base texture, that painted column persisted as a static, frozen plume hovering above the campfire in the loop.
+
+### 6.2 Generic Engine Enhancement: `erase` (or `inpaint`)
+Instead of an ad-hoc image edit, added generic support for top-level `"erase"` (or `"inpaint"`) polygons in `tools/pocketworld.py` and the skill documentation:
+- **Pipeline integration**: When `erase` polygons are provided in `scene.json`, prep downsamples them with 1-cell dilation (`grow=int(S)`) and applies 4-neighbour diffusion inpainting (`inpaint()`) to both `rgb` and `cov` coverage.
+- Where the painted plume extended into paper white (`Y: [260, 370]`), coverage diffuses to 0 and becomes pure paper white (`[255, 255, 255]`).
+- Where the plume was inside the diorama (`Y: [370, 545]`), the warm tent interior and night trees background seamlessly inpaint across the gap.
+- Handled in `_rings(cfg)` so `overlay.png` visualizes `erase0` alongside other polygons.
+
+### 6.3 Verification (Rubric & Visual Gates)
+1. **`overlay.png`**: `erase0` polygon hugs the painted smoke plume from `Y=260` down to `Y=545` right above the campfire flame peak.
+2. **`build/parts.png`**: Verified tiles; moving parts (`flames`, `person_breath`, `dog_breath`, `dog_ear`) remain crisp and intact.
+3. **Crops inspected**:
+   - `crops/smoke_area_t1.5.png` & `crops/smoke_area_t4.5.png`: Non-white pixels in upper sky section reduced from 5,032 in reference to **0** in render. No frozen grey smoke column is visible anywhere above the campfire.
+   - `crops/flame_t1.0.png`, `flame_t2.0.png`, `flame_t3.0.png`: Campfire flames remain jumping and dynamic (>47% pixel variation between seconds) with warm dual-frequency flicker.
+   - `crops/person_face_t.png` & `crops/dog_face_t.png`: Facial detail crisp and expressive in `detail`.
+   - `out/dog_ear_phases.png`: Occasional natural ear flick preserved (`duty: 0.16`).
+4. **Metrics (`out/metrics.json`)**:
+   - `medianCells`: 65.0 (0.096% per frame, calm diorama baseline).
+   - `maxOverMedian`: 2.0.
+   - `seamCells`: 75 (comfortably within normal 24–96 range).
+   - `seamWithinRange`: `true`.
+
