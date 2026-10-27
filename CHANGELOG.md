@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-27
+
+### Added
+
+- **Lake Boat Living Diorama (`examples/lake-boat`)**:
+  - A tranquil twilight lake diorama featuring an elderly fisherman in a weathered wooden boat.
+  - Multi-harmonic water waves and surface shimmers across three seamless lake zones.
+  - Delicate bamboo fishing rod with subtle trembling and bite flick via `rigid` rotation with `duty` cycle and `snap` easing.
+  - Soft torso breathing, tree foliage sway, warm flickering bow lantern light, and lazily drifting fireflies (`particles`).
+  - Added to playground preview (`playground/index.html`) and documentation (`README.md`).
+
+- **Composition & Footprint Variety**:
+  - Dioramas are no longer restricted to rigid square island blocks. While maintaining the signature 2:1 dimetric perspective on a clean white page (`#FFFFFF`), scenes can now adopt natural footprints:
+    - Square island blocks (curbs, courtyards, bus stops)
+    - Long horizontal or diagonal strips (piers, riverbanks, sidewalks)
+    - Short narrow slices (doorways, window nooks)
+    - Small round stages or floating circular platforms (performers, stages)
+    - Open soft vignettes that gently fade and dissolve into white paper without hard geometric boundaries (`lake-boat`, `snow-campfire`).
+  - Updated agent skills (`skills/pocketworld/SKILL.md`, `reference_prompt.md`), `AGENTS.md`, and CLI templates.
+
+- **Reference-Image Verification & Prompt Generator CLI**:
+  - Added `node cli/pocketworld.js check-ref <image>` to validate reference images against the pocketworld contract (1:1 square canvas, clean white margins, low-saturation refined watercolor palette, balanced luminance).
+  - Added `node cli/pocketworld.js prompt "<concept>"` to generate tailored, style-compliant image generation prompts offering flexible composition footprints.
+
+- **Generic Erase / Inpaint Polygon Support**:
+  - Added support for arbitrary `erase` polygon arrays in `scene.json` to seamlessly inpaint unwanted static reference artifacts (e.g. frozen smoke plumes or foreign objects) using iterative multi-scale Poisson reconstruction.
+
 ## [0.1.0] - 2026-10-27
 
 First public release of **pocketworld**: turn reference paintings into living, breathing dithered dioramas using a single WebGL2 shader, an OKLab palette, and an ordered Bayer dither.

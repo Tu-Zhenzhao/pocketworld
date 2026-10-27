@@ -1291,7 +1291,7 @@ def cmd_check_ref(target):
     if corner_mean < 0.92:
         warnings.append(
             f'Background is not clean white (margin mean brightness: {corner_mean*255:.1f}/255). '
-            'Diorama island must float on a clean white page (#FFFFFF) with wide empty margins.'
+            'Diorama must float on a clean white page (#FFFFFF) with wide empty margins.'
         )
 
     border_pixels = np.concatenate([
@@ -1304,7 +1304,7 @@ def cmd_check_ref(target):
     if border_dark > (border_pixels.shape[0] * 0.05):
         warnings.append(
             'Subject appears cropped or touching canvas boundaries. '
-            'Leave a generous empty white margin around the diorama island.'
+            'Leave a generous empty white margin around the diorama.'
         )
 
     # 3. Saturation check
@@ -1330,7 +1330,7 @@ def cmd_check_ref(target):
     if lum < 0.55:
         warnings.append(
             f'Image appears too dark overall (average luminance: {lum*255:.1f}/255). '
-            'Ensure the diorama island is well-lit and placed on a white page.'
+            'Ensure the diorama is well-lit and placed on a white page.'
         )
 
     print(f'Checking reference: {img_path} ({w}x{h})')
@@ -1340,7 +1340,7 @@ def cmd_check_ref(target):
             print(f'  {i}. {w_msg}')
         print('Recommendation: Review skills/pocketworld/reference_prompt.md or generate a new still.')
     else:
-        print('[OK] Reference image passes all checks: 1:1 square, clean white background margins, refined low saturation, balanced luminance.')
+        print('[OK] Reference image passes all checks: 1:1 square canvas, clean white background margins, refined low saturation, balanced luminance.')
 
 def main():
     ap = argparse.ArgumentParser(description='pocketworld prep and scene helpers')
