@@ -28,6 +28,14 @@ The generic `layers` profile: motion is a list of layers by physical category (s
 
 [Video](examples/chess-under-tree/out/loop.mp4). [Reference beside the frame](examples/chess-under-tree/out/compare.png). [The fan at four phases](examples/chess-under-tree/out/fan_phases.png).
 
+## Campfire in the snow
+
+A winter campsite diorama. The campfire flames dance, warm amber light flickers across the snow and tent, the camper warms their hands, and the dog rests peacefully—its ear flicking occasionally using a rigid `duty` cycle.
+
+![Campfire in the snow](examples/snow-campfire/out/loop.gif)
+
+[Video](examples/snow-campfire/out/loop.mp4). [Reference beside the frame](examples/snow-campfire/out/compare.png). [The ear at four phases](examples/snow-campfire/out/dog_ear_phases.png).
+
 ## Thirty seconds
 
 ```bash

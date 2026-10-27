@@ -47,7 +47,13 @@ function inv(m) {
 }
 // 0 at u = 0, 1 at the far end of the stroke, back to 0 at u = 1. snap (0..0.3) makes the
 // outbound half quicker and the return softer. Smooth (C1) across the loop seam.
-export function stroke(u, snap = 0) {
+// duty (0..1) allows a part to complete its stroke within a fraction of its cycle,
+// resting motionless for the remainder.
+export function stroke(u, snap = 0, duty = 1.0) {
+  if (duty < 1.0 && duty > 0.0) {
+    if (u >= duty) return 0;
+    u = u / duty;
+  }
   const s = Math.min(0.3, Math.max(-0.3, snap));
   return 0.5 - 0.5 * Math.cos(2 * Math.PI * (u + s * Math.sin(Math.PI * u)));
 }
@@ -61,7 +67,7 @@ export function partTransforms(parts, t, loop) {
       const [rx, ry] = pt.radius;
       L = [1, 0, 0, 1, rx * Math.sin(2 * Math.PI * u), -ry * Math.sin(4 * Math.PI * u)];
     } else {
-      const th = pt.bias + pt.amp * stroke(u, pt.snap);
+      const th = pt.bias + pt.amp * stroke(u, pt.snap, pt.duty ?? 1.0);
       const cs = Math.cos(th), sn = Math.sin(th), [px, py] = pt.pivot;
       L = [cs, sn, -sn, cs, px - cs * px + sn * py, py - sn * px - cs * py];
     }

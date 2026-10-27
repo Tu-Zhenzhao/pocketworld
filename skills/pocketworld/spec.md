@@ -38,6 +38,7 @@ Coverage is blurred about 1 cell and only allowed to grow outward (`max(cov, blu
 - Breath is 4–6 s. A heartbeat is about 0.9 s. Both divide the loop (3×4 s, 2×6 s, 13 ripples in 12 s ≈ 0.92 s).
 - Easing is sine, smoothstep, or a cubic ease-out. Nothing snaps on and off.
 - Motion comes in physical categories (soft deform, rigid rotate about a pivot, path, particles, surface waves, light). See *Motion layers* in `SKILL.md`. Never a per-object shader.
+- Rigid layer fields: `poly` (cutout boundary), `pivot` [x,y], `amp` deg (negative = counter-clockwise), `bias` deg, `period` s (divides loop), `phase` 0–1, `snap` 0–0.3 (quicker outbound stroke, softer return), `duty` 0–1 (stroke completes within fraction of cycle, resting motionless for the remainder), `parent` (rides on earlier rigid part).
 - Faces and hands that do not hold a moving part stay in `still`: expressive, never sharpened, never warped.
 - Only poses that are in the reference. A part swings about where it was drawn.
 - People stay almost still. Life is the environment: rain, water, light, cloth, a breath, an ear.

@@ -1,0 +1,46 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-10-27
+
+First public release of **pocketworld**: turn reference paintings into living, breathing dithered dioramas using a single WebGL2 shader, an OKLab palette, and an ordered Bayer dither.
+
+### Features
+
+- **Reference-image-as-base layers profile**:
+  - The reference painting serves as the ground-truth base layer. Figures and scenes are never crudely redrawn with math or SDFs.
+  - Moving parts are cleanly cut out and sampled through inverse coordinate transforms, with automated multi-scale Poisson/diffusion inpainting filling holes behind them.
+- **Physical motion categories**:
+  - `soft`: Smooth coordinate warping for cloth, foliage, grass, and subtle breathing.
+  - `rigid`: Pivot-based rotation with configurable amplitude, bias, `snap` easing (fast outbound stroke, soft return), hierarchical `parent` kinematic chaining, and `duty` cycle control (fractional stroke execution with motionless resting intervals).
+  - `path`: Small 2D trajectory loops (radius-based figure-eight or circular motion).
+  - `particles`: Environment emitters for falling rain, drifting snow, and rising steam.
+  - `waves`: Water surface shimmers and periodic ripples.
+  - `light`: Ambient breathing, campfire/candle flicker, specular glints, and swinging shadow projection.
+- **Render & Tooling CLI (`cli/pocketworld.js`)**:
+  - `prep`: Palette extraction (OKLab k-means with locked key colours), mask rasterization, continuous base / inpaint generation, and diagnostic linting.
+  - `render`: Automated 60 fps frame capture via headless Chrome and ffmpeg compilation into seamless MP4 and animated GIF, accompanied by side-by-side comparison (`compare.png`), contact sheets (`contact.png`, `contact_detail.png`), and temporal smoothness metrics (`metrics.json`).
+  - `overlay` & `suggest`: Grid-guided polygon alignment and automated palette / cloth / wet mask proposals.
+  - `phases`: Multi-phase zoomed diagnostic contact strips for moving components across their cycles.
+- **`<pocket-world>` Web Component**:
+  - Lightweight custom element (`src/element.js`) wrapping the WebGL2 player.
+  - Zero external runtime dependencies, automatic off-screen pause via `IntersectionObserver`, and `prefers-reduced-motion` compliance.
+- **Agent Skill & Iterative Workflow (`skills/pocketworld`)**:
+  - Step-by-step agent instructions (`SKILL.md`), look spec (`spec.md`), checklist (`checklist.md`), and reference prompt generator (`reference-prompt.md`).
+  - Strict "look, critique, fix" working method with mandatory gates: `build/parts.png` cutout audit and `out/<part>_phases.png` phase-strip validation.
+  - Failures gallery (`skills/pocketworld/failures/`) documenting known visual artifacts and fixes.
+- **Living Diorama Examples**:
+  - `rain-bus-stop`: Rainy bus stop with lamp glow, dripping roof, ripples, umbrella sway, and breathing passenger.
+  - `rooftop-laundry`: Sunny rooftop with fluttering laundry, cat breath, shadows, and floating motes.
+  - `chess-under-tree`: Generic layers profile with swaying foliage, falling leaves, forearm-and-fan hierarchical rotation, and breathing players.
+  - `snow-campfire`: Winter diorama featuring leaping campfire flames, dual-harmonic flicker light, gentle breathing, drifting snow, and occasional dog ear flicks using rigid `duty` cycles.
+
+### Known Limitations
+
+- **Flames have no dedicated category yet**: Currently approximated using `soft` deform with `foliage` flutter combined with dual `flicker` light layers.
+- **Occasional motion is periodic, not random**: All cycles must divide the 12-second seamless loop; occasional motions (like an animal ear twitch) repeat at exact periodic intervals rather than true stochastic triggers.
+- **Agents sometimes don't follow every instruction**: Autonomous agents may require gate enforcement (`REPORT.md`, parts sheet verification) to ensure strict adherence to visual fidelity and rubric standards.

@@ -141,7 +141,7 @@ d. **Pick amplitude and rhythm** from the table. Every period is rounded to a wh
 | `type` | for | keys (reference px unless noted) |
 |---|---|---|
 | `soft` | cloth, flags, hair, foliage, grass | `poly`, `line` [x0,y0,x1,y1] (anchor), `hem` (px from line to full swing; **negative = anchored at the bottom**, e.g. grass, a flame), `amp` cells, `phase` rad, `preset` `cloth` or `foliage`, optional `dir` degrees, `feather` px |
-| `rigid` | fan, arm, pendulum, branch, windmill, door | `poly` (ring or list of rings), `pivot` [x,y], `amp` deg (negative = counter-clockwise on screen), `bias` deg, `period` s, `phase` 0–1, `snap` 0–0.3 (quicker outbound stroke, softer return), `parent` (name of an earlier rigid part: the child rides on it) |
+| `rigid` | fan, arm, pendulum, branch, windmill, door | `poly` (ring or list of rings), `pivot` [x,y], `amp` deg (negative = counter-clockwise on screen), `bias` deg, `period` s, `phase` 0–1, `snap` 0–0.3 (quicker outbound stroke, softer return), `duty` 0–1 (stroke completes within fraction of cycle, rests motionless for remainder; default 1.0), `parent` (name of an earlier rigid part: the child rides on it) |
 | `path` | birds, clouds, boats | `poly`, `radius` [rx, ry] cells (a small figure-eight loop), `period`, `phase` |
 | `particles` | rain, snow, falling leaves, motes, steam | `kind`, `zone` rings (steam: `origin` [x,y]), `density` 0–1, `size` cells, `fall` cells per loop, `color` |
 | `waves` | water shimmer, ripples | `poly` (the wet area), `shimmer` 0–1, `ripples` 0–1 (13 per loop ≈ 0.92 s) |
@@ -152,7 +152,7 @@ At most 8 rigid/path parts, 4 lights, 4 particle layers.
 How each works:
 
 - **soft** warps the reference itself with a smooth weight field (zero on the anchor line, full at `hem`, feathered at the polygon edge). There is no colour test and no cut-out, so leaves and grass need no `clothMinL` / `clothMaxChroma` tricks and nothing tears. `foliage` adds a slow flutter that varies across the crown and drops the cloth hem lift.
-- **rigid / path** parts are cut out by `poly` ∩ ink, minus `still`; the hole is inpainted in prep. The shader samples the part through the inverse transform about the pivot, so it moves as one piece and draws over whatever is behind it. Angle is `bias + amp · ease(u)`: 0 at t = 0 (the reference pose), peak, then back. `snap` warps time so the first half is quicker. A `parent` composes transforms: the child rotates about its own pivot, then follows the parent.
+- **rigid / path** parts are cut out by `poly` ∩ ink, minus `still`; the hole is inpainted in prep. The shader samples the part through the inverse transform about the pivot, so it moves as one piece and draws over whatever is behind it. Angle is `bias + amp · ease(u)`: 0 at t = 0 (the reference pose), peak, then back. `snap` warps time so the first half is quicker. `duty` (0..1) lets a stroke complete in a fraction of its cycle and sit motionless for the rest, for natural occasional twitches (e.g. an animal's ear). A `parent` composes transforms: the child rotates about its own pivot, then follows the parent.
 - **particles, waves, light** are the bus-stop and rooftop effects, exposed as layers.
 
 `still` (one ring or a list), in `layers`, is masked out of all motion: soft weight is zero there and it is cut out of every rigid part. (In `laundry`, `still` is different: it is an occluder drawn back on top of the cloth.) `detail` rings dither finer.
