@@ -1,37 +1,126 @@
-# Reference image prompt
+# Reference Image Standard & Prompt Guide
 
-Fill the brackets. Generate one square still. The animation is made from this picture, so the drawing has to be right before any code runs.
+Before writing `scene.json` or animating layers, you need a high-quality reference image. **Generating one with an image model is the recommended path.**
 
-## Spec
+The shader never redraws people or places from scratch; it animates cutouts and warps of the pixels in this image, quantizing them into a short OKLab palette with an ordered Bayer dither. If the reference still is wrong, the shader cannot fix it.
 
-- **Square, 1024×1024.** That is the coordinate space `scene.json` uses.
-- **Pure white background.** Not cream, not a sky that fills the frame. The diorama floats on the page.
-- **A generous white margin** on every side. The edges of the scene haze into the paper. No hard rectangular frame, no border, no drop shadow card.
-- **Isometric pocket diorama.** 2:1 dimetric: the ground plane runs down-right and down-left, and a vertical in the world is about twice a ground step. People stand upright. The camera looks down a little, the way a model on a desk does.
-- **No black outlines.** Shapes read from colour and value. No ink, no comic contour, no text, no watermark, no signature.
-- **Airy and clean.** Soft light, small colour areas, visible material (wet stone, cloth, glass). Not a flat vector poster and not a muddy painting.
-- **One moment, a few figures.** The people are the drawing. Get the gesture right. Everything that should move later (cloth, an umbrella, an animal, rain on the ground) must be visible and separable from what it stands in front of.
+---
 
-## Prompt
+## 1. The Core Contract: Loose on Content, Firm on Style
 
+You are free to depict any story, scene, or setting—a rainy bus stop, a rooftop laundry terrace, old friends playing chess under a tree, a winter campsite with a campfire, a night ramen stall, a greenhouse in morning mist.
+
+**Pocketworld is loose on content, but firm on style.**
+
+### What a good reference looks like:
+- **Square (1:1, 1024×1024)**: The canonical coordinate system for `scene.json` and prep.
+- **Isometric small diorama island**: 2:1 dimetric perspective (ground plane recedes down-left and down-right; vertical lines stay upright; camera looks slightly down like an architectural model or diorama on a table).
+- **Plain white / clean background**: Pure white paper background (`#FFFFFF`) with generous empty margins on all four sides. The diorama floats as a self-contained island whose perimeter dissolves softly into the paper.
+- **Pixel-art / painterly pixel aesthetic**: Distinct, readable forms with visible material texture (wet stone, cloth, foliage, canvas, wood) that will translate cleanly into a 260-cell dither grid.
+- **Low-saturation refined palette**: Natural watercolor/gouache tones. Muted earthy or atmospheric hues with 1–2 restrained warm or cool accent colors. Never neon or candy-colored.
+- **No black outlines**: Shapes and depth must read purely through value, lighting, and color contrast—never comic ink contours or heavy dark strokes.
+- **Subjects separated with clear gaps**: Figures and props have distinct negative space or clear separation so they can be isolated into clean polygon masks.
+- **Moving parts drawn clearly and unoccluded**: Anything that moves later (cloth, an umbrella, a hand holding a fan, tree branches, animal ears, flames, puddles) must be clearly visible, delineated, and separable from whatever lies behind it.
+- **No text, watermark, logo, or border**: No lettering, signatures, or decorative border cards that pollute the palette or texture atlas.
+
+### What is NOT acceptable:
+- ❌ **Random street photos or real-life snapshots**: Photography lacks diorama isolation, contains noisy backgrounds, real-world lens distortion, and chaotic lighting that breaks inpainting and palette clustering.
+- ❌ **Cluttered edge-to-edge scenes**: Backgrounds that fill the entire frame up to the borders (sky, pavement, or walls extending to the 1024×1024 edges).
+- ❌ **Heavy black outlines or vector cel-shading**: Cartoony ink contours create jarring dark fringes in ordered dithering and destroy OKLab quantization.
+- ❌ **Oversaturated or candy-colored palettes**: Neon colors cause harsh clipping in the shader and fail the calm, refined aesthetic.
+- ❌ **Cropped subjects or occluded moving parts**: Figures cut off by canvas edges, or moving elements tangled into the background so they cannot be cleanly cut out and inpainted.
+
+---
+
+## 2. Fill-in-the-Blanks Prompt Template
+
+Copy and fill this prompt for your image generator (Midjourney, DALL-E, Flux, Imagen, Stable Diffusion):
+
+```text
+A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin.
+The scene is [ONE-SENTENCE SCENE SUMMARY: who, where, time of day, atmosphere].
+2:1 dimetric perspective, like a miniature model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down.
+Soft lighting [DAYLIGHT OR ONE PRACTICAL LAMP].
+Delicate low-saturation refined palette, muted painterly tones, no black outlines, no ink contours, no comic art, no text, no watermark, no border, no frame.
+Diorama island edges fade softly into the clean white paper.
+Materials: [NAME 2-4 VISIBLE MATERIALS: e.g. wet asphalt, linen cloth, stone pavers, weathered wood, pine needles].
+Key accents: [1-2 RESTRAINED ACCENT COLOURS: e.g. warm amber lamp glow, dusty-rose umbrella, mustard coat].
+Figures and gestures: [LIST FIGURES AND THEIR POSE/GESTURE].
+Moving elements: [LIST 1-3 MOVING PARTS: e.g. cloth on line, swaying umbrella, handheld fan, animal ear, campfire flame] clearly delineated and unoccluded with visible space around them.
+Painterly pixel diorama aesthetic, airy and clean.
 ```
-A square illustration of a tiny isometric diorama on a pure white background, 1024 by 1024, with a wide empty white margin. The scene is [ONE SENTENCE: who, where, the mood]. 2:1 dimetric, like a model on a desk: the floor recedes down-left and down-right, people stand upright, the camera is slightly above. Soft daylight or one practical lamp. Airy, clean, delicate colour, no black outlines, no text, no border, no frame. Edges fade into the white paper. [NAME THE MATERIALS AND THE ONE WARM OR COOL ACCENT]. Painterly, but every silhouette is readable: [LIST THE FIGURES AND THE GESTURE OF EACH]. Leave the white page empty around the diorama.
+
+### Recommended Negative Prompt:
+```text
+photorealistic, photograph, real-life street photo, black outlines, heavy ink contours, comic art, cel shading, vector graphic, text, watermark, signature, logo, border, frame, card border, edge-to-edge background, sky filling frame, cropped diorama, touching borders, oversaturated, neon candy colors, 3D plastic render, high gloss.
 ```
 
-## Rain at the bus stop, as an example
+---
 
+## 3. Four Worked Examples
+
+These prompts reflect the approved scenes in this repository:
+
+### 1. Rain at the bus stop (`examples/rain-bus-stop`)
+```text
+A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. A quiet city bus stop at dusk in the pouring rain. 2:1 dimetric perspective, like a miniature architectural model on a desk: dark asphalt ground recedes down-left and down-right, lamp post stands upright, camera slightly above. Materials: wet glistening dark grey asphalt, a simple metal shelter bench, a puddle on the pavement, a glowing amber streetlamp on a slender post. Key accents: the warm amber glow of the lamp and a muted mustard-yellow raincoat. Figures and gestures: a woman in a mustard coat holds a dusty-rose umbrella standing by the curb; a man in a grey hoodie sits on the shelter bench with head bowed quietly. Moving parts clearly visible: the rose umbrella held high above the shoulder with clear space around it, the wet ground puddle ready for raindrops and ripples, soft lamp glow. Airy, clean, delicate low-saturation refined palette, no black outlines, no text, no border. Edges fade into the white paper.
 ```
-A square illustration of a tiny isometric diorama on a pure white background, 1024 by 1024, with a wide empty white margin. A quiet bus stop in the rain at dusk: a woman in a mustard coat holds a dusty-rose umbrella and looks at a man in a grey hoodie sitting on the bench, head bowed. 2:1 dimetric, like a model on a desk. One warm lamp on a post, wet blue-grey asphalt, a little grass. Airy, clean, delicate colour, no black outlines, no text, no border. Edges fade into the white paper. The rose umbrella and the mustard coat are the only warm accents besides the amber lamp. Painterly, but every silhouette is readable.
+
+### 2. Rooftop laundry (`examples/rooftop-laundry`)
+```text
+A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. A sunlit Mediterranean rooftop terrace on a breezy afternoon. 2:1 dimetric perspective, like a model on a desk: terracotta tile roof plane recedes down-left and down-right, camera slightly above. Materials: weathered pale terracotta roof tiles, whitewashed parapet wall, wooden laundry poles, clothesline string. Key accents: pale sky-blue linen shirt and crisp white bedsheets catching golden afternoon sunlight. Figures and gestures: a young woman in a simple summer dress stands by the parapet gazing out; a sleepy ginger cat curled up on a warm sunlit stone ledge. Moving parts clearly visible and unoccluded: large rectangular white bedsheet and light-blue shirt hanging freely on the clothesline with clear gaps below for wind sway, the cat resting in clear silhouette with visible ears. Delicate low-saturation palette, soft daylight and cast shadows, no black outlines, no text, no frame. Diorama edges dissolve into the white paper.
 ```
 
-## After the image comes back
+### 3. Chess under the tree (`examples/chess-under-tree`)
+```text
+A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. Two elderly friends playing Chinese chess (xiangqi) under the shade of a broad summer tree in a courtyard. 2:1 dimetric perspective, like a miniature diorama on a table: cobblestone courtyard ground plane recedes down-left and down-right, tree trunk upright. Materials: grey stone pavers, gnarled tree bark, lush leafy green canopy, a small stone chess table with a wooden stool. Key accents: muted jade green foliage and the subtle ochre of the wooden fan. Figures and gestures: an elderly man sitting on the left contemplating his next move; the man on the right holding an open palm-leaf fan in one hand near his chest, looking at the board. Moving parts clearly visible and unoccluded: the leafy tree canopy above with distinct branch clusters, the man's forearm and palm-leaf fan held with clear space around it for a gentle fanning motion, a few loose leaves drifting toward the ground. Airy, clean, refined natural palette with restrained saturation, no black outlines, no comic contours, no text, no border. Edges fade softly into the white paper.
+```
 
-Reject it and generate again if any of these are true:
+### 4. Campfire in the snow (`examples/snow-campfire`)
+```text
+A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. A peaceful winter wilderness campsite in fresh snow at twilight. 2:1 dimetric perspective, like a miniature model on a desk: gentle snow-covered ground recedes down-left and down-right, pine trees upright. Materials: pristine white powdery snow mound, a small dark canvas tent, a stone fire pit with leaping orange flames, a sleeping sled dog. Key accents: warm glowing orange and amber campfire light contrasting with cool slate-blue twilight snow. Figures and gestures: a lone camper in a dark winter parka kneeling near the fire warming hands; a husky dog lying curled up asleep on the snow beside the tent. Moving parts clearly visible and unoccluded: the campfire flame tongue rising clearly against the snow, the dog with visible upright ears and curled posture, subtle warm light falloff on the tent wall and snow surface. Delicate restrained palette, no black outlines, no text, no watermark, no frame. Diorama edges fade into the pure white paper.
+```
 
-- The background is not white, or the diorama is cropped by the frame.
-- Figures have black contours, or the whole image is flat vector shapes.
-- You cannot point at the head, the hands, and the feet.
-- Something that must move (a sheet, an umbrella, an animal) is the same colour as the wall behind it and you cannot see its edge.
-- There is text, a logo, or a second scene in the margin.
+---
 
-Save the keeper as `examples/<name>/reference.jpg`.
+## 4. CLI Helpers
+
+You can generate a prompt or validate your reference image directly from the command line:
+
+### Generate a prompt from an idea:
+```bash
+# English or Chinese or any language
+node cli/pocketworld.js prompt "a quiet ramen cart on a rainy Tokyo backstreet with a glowing red lantern"
+node cli/pocketworld.js prompt "雨夜拉面摊，一个厨师在煮面，一只橘猫在吃鱼"
+```
+
+### Validate a reference image:
+```bash
+node cli/pocketworld.js check-ref examples/your-scene/reference.jpg
+# Or validate by scene directory:
+node cli/pocketworld.js check-ref examples/your-scene
+```
+The validator checks:
+1. **Dimensions**: Exact 1:1 square ratio (1024×1024 recommended).
+2. **Background**: Pure clean white margins (floats on white page, no cropped borders).
+3. **Saturation**: Restrained, refined palette (flags candy/neon oversaturation).
+4. **Luminance**: Well-lit diorama on paper (flags overly dark images).
+
+---
+
+## 5. Post-Generation Quality Checklist
+
+After your image model produces a candidate, check this list before proceeding:
+
+| Check | Pass | Reject & Regenerate if... |
+|---|---|---|
+| **Ratio & Margins** | 1024×1024 square, wide white margin | Rectangular, or diorama touches/bleeds off the frame edge. |
+| **Background** | Pure clean white paper (`#ffffff`) | Sky, ground, wall, or dark color fills the entire frame. |
+| **Perspective** | 2:1 dimetric isometric | Flat 2D side view, top-down map, or extreme perspective distortion. |
+| **Outlines** | Zero black ink outlines; forms read by value | Comic contours, bold black pen lines, or cel-shaded borders. |
+| **Palette** | Low saturation, refined watercolor tones | Harsh neon, fluorescent accents, or candy-like oversaturation. |
+| **Moving Parts** | Moving elements clearly delineated with gaps | A fan fused into a shirt, clothes fused into walls, or props occluded. |
+| **Gestures** | Readable heads, hands, posture | Mangled hands, unrecognizable faces, or chaotic clutter. |
+| **Artifacts** | Clean page | Text, watermark, logo, or multiple diorama cards on one canvas. |
+
+Save the approved image to `examples/<name>/reference.jpg`.

@@ -41,6 +41,12 @@ A winter campsite diorama. The campfire flames dance, warm amber light flickers 
 ```bash
 npm install
 python3 -m pip install -r requirements.txt
+
+# Generate an image-generation prompt or validate a reference image:
+node cli/pocketworld.js prompt "a quiet bus stop in the rain at dusk"
+node cli/pocketworld.js check-ref examples/rain-bus-stop
+
+# Build and render:
 node cli/pocketworld.js prep examples/rain-bus-stop
 node cli/pocketworld.js render examples/rain-bus-stop
 npm run dev
@@ -57,9 +63,14 @@ The playground is `http://127.0.0.1:8787/playground/`. `render` writes a 60 fps 
 
 The workflow is [`skills/pocketworld/SKILL.md`](skills/pocketworld/SKILL.md). The short version:
 
-1. Generate a square isometric still on white, with the prompt in [`reference-prompt.md`](skills/pocketworld/reference-prompt.md). Or bring a picture you already love, if it can live on a white page.
-2. Save it as `examples/your-scene/reference.jpg` and a `scene.json` beside it. Trace masks on the grid from `node cli/pocketworld.js overlay examples/your-scene`. `suggest` will guess key colours and pale cloth so you are not placing every point by hand.
-3. `prep`, look at the still, then `render`. The compare image and the metric tell you if it holds. The skill lists which knob fixes which problem: too painterly, too greasy, a washed-out fold, choppy time, motion that is too loud or too shy.
+0. **Reference image (loose on content, firm on style)**: Pocketworld animates layers from a reference painting. The reference must be an isometric small diorama island on a pure white background with wide margins, low saturation, no black outlines, and clearly separated moving parts (never random street photos or cluttered edge-to-edge scenes). Generating one with an image model is the recommended path:
+   ```bash
+   node cli/pocketworld.js prompt "<your scene idea in any language>"
+   node cli/pocketworld.js check-ref examples/your-scene/reference.jpg
+   ```
+   Full prompt templates and worked examples are in [`reference_prompt.md`](skills/pocketworld/reference_prompt.md).
+1. Save the keeper as `examples/your-scene/reference.jpg` and a `scene.json` beside it. Trace masks on the grid from `node cli/pocketworld.js overlay examples/your-scene`. `suggest` will guess key colours and pale cloth so you are not placing every point by hand.
+2. `prep`, look at the still, then `render`. The compare image and the metric tell you if it holds. The skill lists which knob fixes which problem: too painterly, too greasy, a washed-out fold, choppy time, motion that is too loud or too shy.
 
 An earlier try drew the people out of math. They looked like math. That code is in [`experimental/sdf/`](experimental/sdf/) and it is not how these are made.
 
