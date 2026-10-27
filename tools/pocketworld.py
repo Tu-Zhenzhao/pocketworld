@@ -1240,11 +1240,115 @@ def cmd_present(scene):
         os.remove(os.path.join(tmp, fn))
     os.rmdir(tmp)
 
+def cmd_check_ref(target):
+    if os.path.isdir(target):
+        scene_json = os.path.join(target, 'scene.json')
+        if os.path.isfile(scene_json):
+            try:
+                cfg = json.load(open(scene_json))
+                ref_name = cfg.get('reference', 'reference.jpg')
+            except Exception:
+                ref_name = 'reference.jpg'
+            img_path = os.path.join(target, ref_name)
+        else:
+            candidates = [os.path.join(target, 'reference.jpg'), os.path.join(target, 'reference.png'), os.path.join(target, 'reference.jpeg')]
+            found = [c for c in candidates if os.path.isfile(c)]
+            if found:
+                img_path = found[0]
+            else:
+                raise SystemExit(f'check-ref: no reference image found in directory {target}')
+    elif os.path.isfile(target):
+        img_path = target
+    else:
+        raise SystemExit(f'check-ref: target not found: {target}')
+
+    try:
+        img = Image.open(img_path).convert('RGB')
+    except Exception as e:
+        raise SystemExit(f'check-ref: cannot open {img_path}: {e}')
+
+    w, h = img.size
+    warnings = []
+
+    # 1. Square & resolution
+    if w != h:
+        warnings.append(f'Non-square aspect ratio: {w}x{h}. Pocketworld reference images must be 1:1 square (ideal: 1024x1024).')
+    elif w < 512 or h < 512:
+        warnings.append(f'Low resolution: {w}x{h}. Recommended resolution is 1024x1024.')
+
+    arr = np.array(img, dtype=np.float32) / 255.0
+
+    # 2. Clean white background & margin isolation
+    cw = min(32, w // 8)
+    ch = min(32, h // 8)
+    corners = np.concatenate([
+        arr[:ch, :cw].reshape(-1, 3),
+        arr[:ch, -cw:].reshape(-1, 3),
+        arr[-ch:, :cw].reshape(-1, 3),
+        arr[-ch:, -cw:].reshape(-1, 3)
+    ], axis=0)
+    corner_mean = corners.mean()
+    if corner_mean < 0.92:
+        warnings.append(
+            f'Background is not clean white (margin mean brightness: {corner_mean*255:.1f}/255). '
+            'Diorama island must float on a clean white page (#FFFFFF) with wide empty margins.'
+        )
+
+    border_pixels = np.concatenate([
+        arr[:2, :].reshape(-1, 3),
+        arr[-2:, :].reshape(-1, 3),
+        arr[:, :2].reshape(-1, 3),
+        arr[:, -2:].reshape(-1, 3)
+    ], axis=0)
+    border_dark = (border_pixels.max(axis=-1) < 0.90).sum()
+    if border_dark > (border_pixels.shape[0] * 0.05):
+        warnings.append(
+            'Subject appears cropped or touching canvas boundaries. '
+            'Leave a generous empty white margin around the diorama island.'
+        )
+
+    # 3. Saturation check
+    mx = arr.max(axis=-1)
+    mn = arr.min(axis=-1)
+    diff = mx - mn
+    sat = np.where(mx > 0.05, diff / np.maximum(mx, 1e-5), 0)
+    is_white = (arr > 0.95).all(axis=-1)
+    non_white = ~is_white
+    if non_white.sum() > 0:
+        mean_sat = sat[non_white].mean()
+        p95_sat = float(np.percentile(sat[non_white], 95))
+        if mean_sat > 0.50 or p95_sat > 0.95:
+            warnings.append(
+                f'Palette saturation is high (mean sat: {mean_sat:.2f}, 95th pct: {p95_sat:.2f}). '
+                'Pocketworld scenes require low-saturation, refined watercolor tones (avoid candy/neon colors).'
+            )
+    else:
+        warnings.append('Image appears almost completely blank/white.')
+
+    # 4. Darkness check
+    lum = (arr @ LUMA).mean()
+    if lum < 0.55:
+        warnings.append(
+            f'Image appears too dark overall (average luminance: {lum*255:.1f}/255). '
+            'Ensure the diorama island is well-lit and placed on a white page.'
+        )
+
+    print(f'Checking reference: {img_path} ({w}x{h})')
+    if warnings:
+        print(f'[WARN] Found {len(warnings)} potential issue(s):')
+        for i, w_msg in enumerate(warnings, 1):
+            print(f'  {i}. {w_msg}')
+        print('Recommendation: Review skills/pocketworld/reference_prompt.md or generate a new still.')
+    else:
+        print('[OK] Reference image passes all checks: 1:1 square, clean white background margins, refined low saturation, balanced luminance.')
+
 def main():
     ap = argparse.ArgumentParser(description='pocketworld prep and scene helpers')
     sub = ap.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('prep', help='build mask textures and build/manifest.json')
     p.add_argument('scene')
+    cr = sub.add_parser('check-ref', help='validate reference image meets pocketworld standards')
+    cr.add_argument('target', help='path to reference image file or scene directory')
     o = sub.add_parser('overlay', help='reference with a coordinate grid and the current polygons')
     o.add_argument('scene')
     o.add_argument('--step', type=int, default=64)
@@ -1260,6 +1364,8 @@ def main():
     args = ap.parse_args()
     if args.cmd == 'prep':
         cmd_prep(scene_dir_of(args.scene))
+    elif args.cmd == 'check-ref':
+        cmd_check_ref(args.target)
     elif args.cmd == 'overlay':
         cmd_overlay(scene_dir_of(args.scene), args.step)
     elif args.cmd == 'suggest':

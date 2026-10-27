@@ -46,7 +46,46 @@ Do at least two rounds. For each round, `REPORT.md` lists the issues found, the 
 
 ## Standard flow
 
-1. **Get the still.** Use `reference-prompt.md`. Square, white page, isometric, no black outlines. Save it as `examples/<name>/reference.jpg`.
+### Step 0: Get a good reference image
+
+Read `skills/pocketworld/reference_prompt.md` first. The painting is the base layer of the entire pipeline. The WebGL shader only translates, rotates, and warps existing pixels before quantizing them through an OKLab palette and a 4×4 Bayer dither. It cannot fix bad drawing, wrong perspective, muddy contrast, or cartoon outlines.
+
+**Generating a reference still with an image model is the recommended path.**
+
+#### Loose on content, firm on style
+Pocketworld is **loose on content, firm on style**. You can depict any scene or story you want (a quiet bus stop, a rooftop terrace, friends playing chess, a campfire in the snow, a noodle cart, a garden greenhouse). But the visual contract is strict:
+
+- **What a good reference looks like:**
+  - **Square (1:1, 1024×1024)**: Canonical coordinate space for `scene.json` and prep.
+  - **Isometric small diorama island**: 2:1 dimetric perspective (ground recedes down-left and down-right, verticals upright, camera looking down like a miniature model on a desk).
+  - **Plain white / clean background**: Pure paper white (`#FFFFFF`) with wide, empty margins. The diorama floats as a contained island; edges fade into the white paper.
+  - **Pixel-art / painterly pixel aesthetic**: Readable textures (wood, cloth, asphalt, stone, foliage) that translate naturally into a 260-cell dither grid.
+  - **Low-saturation refined palette**: Natural watercolor/gouache tones. Muted earthy or atmospheric hues with 1–2 restrained accents. Never neon or candy-colored.
+  - **No black outlines**: Depth and shapes read from light, color, and value contrast—never comic ink contours or dark cartoon strokes.
+  - **Subjects separated with clear gaps**: Distinct negative space between figures and props so polygon cutouts stay clean.
+  - **Moving parts drawn clearly and unoccluded**: Anything that moves later (cloth, an umbrella, a fan, branches, animal ears, water puddle) must be visible, delineated, and unoccluded.
+  - **No text, watermark, logo, or border**: No lettering or frame cards.
+
+- **What is NOT acceptable:**
+  - ❌ **Random street photos or real-world snapshots**: Cluttered backgrounds, camera lens distortion, edge-to-edge coverage, and noisy real-world lighting break prep, inpainting, and palette fitting.
+  - ❌ **Cluttered edge-to-edge scenes**: Backgrounds that fill the canvas up to the frame boundaries.
+  - ❌ **Heavy black outlines or vector cel-shading**: Ink lines create dark greasy fringes in ordered Bayer dithering.
+  - ❌ **Oversaturated or candy-colored palettes**: Neon hues blow out the short OKLab palette.
+  - ❌ **Cropped subjects or occluded moving parts**: Moving pieces tangled into backgrounds or touching frame edges cannot be cleanly cut out and inpainted.
+
+#### Quick CLI tools:
+```bash
+# 1. Generate a tailored prompt from your concept (in any language):
+node cli/pocketworld.js prompt "rainy night ramen cart with glowing amber lantern"
+
+# 2. Feed the prompt to an image model (Midjourney, DALL-E, Flux, Imagen, Stable Diffusion).
+#    Save the image to examples/<name>/reference.jpg
+
+# 3. Validate the reference image immediately:
+node cli/pocketworld.js check-ref examples/<name>/reference.jpg
+```
+
+1. **Save the still.** Verify it with `node cli/pocketworld.js check-ref examples/<name>/reference.jpg`. Save it as `examples/<name>/reference.jpg`.
 2. **Pick a profile.** New scenes use `layers` (see *Motion layers* below): decompose the picture into parts, give each moving part a physical category, mark its anchor or pivot, pick amplitude and rhythm. The two older profiles stay for their approved scenes:
    - `rain` — wet ground, falling rain, drips, ripples, a glow, one or two rigid layers (an umbrella, a breathing torso).
    - `laundry` — cloth or foliage that warps, something still in front of it, optional animal, shadows, motes.
@@ -77,7 +116,7 @@ It pauses off screen. Reduced motion holds t = 0.
 
 ## Reference
 
-The spec and the prompt live in `spec.md` and `reference-prompt.md`. Short version: 1024×1024, pure white, wide margin, 2:1 dimetric, edges dissolving into the paper, no text, no black outlines, one moment. If the still is wrong, fix the still. Prep cannot invent a gesture that was not drawn.
+The spec and the prompt live in `spec.md` and `reference_prompt.md`. Short version: 1024×1024, pure white, wide margin, 2:1 dimetric, edges dissolving into the paper, no text, no black outlines, one moment. If the still is wrong, fix the still. Prep cannot invent a gesture that was not drawn.
 
 ## scene.json
 

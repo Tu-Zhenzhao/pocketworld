@@ -11,7 +11,8 @@ Do these in order. Stop and look before you add motion.
 
 ## The picture
 
-- [ ] Square, white page, isometric, no black outlines, readable heads and hands. See `reference-prompt.md`.
+- [ ] Square, white page, isometric, no black outlines, readable heads and hands. See `reference_prompt.md`.
+- [ ] Run `node cli/pocketworld.js check-ref <image>` to verify square aspect, clean white margins, low saturation, and lighting.
 - [ ] Saved as `examples/<name>/reference.jpg`. Write a minimal `scene.json` (profile, reference, look, empty `layers`) before you run `overlay` or `suggest`.
 
 ## The look, before any motion

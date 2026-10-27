@@ -158,9 +158,71 @@ async function dev(port) {
   await new Promise(() => server);
 }
 
+function generatePrompt(desc) {
+  if (!desc || !desc.trim()) {
+    console.log(`pocketworld reference image prompt generator
+
+Usage:
+  node cli/pocketworld.js prompt "<scene description in any language>"
+
+Template:
+  A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin.
+  The scene is [ONE-SENTENCE SCENE SUMMARY: who, where, time of day, atmosphere].
+  2:1 dimetric perspective, like a miniature model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down.
+  Soft lighting. Delicate low-saturation refined palette, muted painterly tones, no black outlines, no text, no watermark, no border, no frame.
+  Diorama island edges fade softly into the clean white paper.
+  [MATERIALS AND KEY ACCENT COLOURS].
+  Figures and gestures: [LIST FIGURES AND THEIR POSE/GESTURE].
+  Moving elements: [LIST 1-3 MOVING PARTS: e.g. cloth, umbrella, fan, flame, pet] clearly delineated and unoccluded with space around them.
+  Painterly pixel diorama aesthetic, airy and clean.
+
+Examples in this repo:
+  - rain-bus-stop:     "a quiet bus stop in the rain at dusk with a woman holding a rose umbrella..."
+  - rooftop-laundry:   "a sunlit rooftop terrace with clothes swaying on a line and a sleeping cat..."
+  - chess-under-tree:  "two friends playing chess under a leafy tree, one waving a palm-leaf fan..."
+  - snow-campfire:     "a winter campsite in fresh snow with a flickering campfire and sleeping dog..."
+
+See skills/pocketworld/reference_prompt.md for detailed guidelines.
+`);
+    return;
+  }
+
+  const prompt = `A square illustration of a tiny isometric diorama island on a pure white background, 1024 by 1024, with a wide empty white margin. The scene is ${desc.trim()}. 2:1 dimetric perspective, like a miniature architectural model on a desk: the ground recedes down-left and down-right, figures stand upright, camera looks slightly down. Soft lighting. Delicate low-saturation refined palette, muted painterly watercolor tones, no black outlines, no ink contours, no comic art, no text, no watermark, no border, no frame. Diorama island edges fade softly into the clean white paper. Figures have clear gestures with distinct negative space; all moving parts (e.g. cloth, handheld props, foliage, water, or flames) are clearly visible, unoccluded, and separable from the background. Painterly pixel diorama aesthetic, airy and clean.`;
+
+  const negative = `photorealistic, photograph, real-life street photo, black outlines, heavy ink contours, comic art, cel shading, vector graphic, text, watermark, signature, logo, border, frame, card border, edge-to-edge background, sky filling frame, cropped diorama, touching borders, oversaturated, neon candy colors, 3D plastic render, high gloss.`;
+
+  console.log(`\n================================================================================`);
+  console.log(`POCKETWORLD REFERENCE IMAGE PROMPT`);
+  console.log(`================================================================================\n`);
+  console.log(prompt);
+  console.log(`\n--------------------------------------------------------------------------------`);
+  console.log(`NEGATIVE PROMPT:`);
+  console.log(`--------------------------------------------------------------------------------\n`);
+  console.log(negative);
+  console.log(`\n--------------------------------------------------------------------------------`);
+  console.log(`STYLE CONTRACT & NEXT STEPS:`);
+  console.log(`--------------------------------------------------------------------------------`);
+  console.log(`1. Aspect ratio: 1:1 square (ideal: 1024x1024).`);
+  console.log(`2. Background: Pure clean white (#FFFFFF) with wide empty margins on all sides.`);
+  console.log(`3. Style: Loose on content, firm on style. Low saturation, no black outlines.`);
+  console.log(`4. Save your image to: examples/<name>/reference.jpg`);
+  console.log(`5. Validate with: node cli/pocketworld.js check-ref examples/<name>/reference.jpg\n`);
+}
+
+function resolveRefTarget(arg) {
+  if (existsSync(arg)) return path.resolve(arg);
+  const candidates = [path.resolve(arg), path.join(ROOT, arg), path.join(ROOT, "examples", arg)];
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
+  }
+  return path.resolve(arg);
+}
+
 function help() {
   console.log(`pocketworld
 
+  prompt [desc]      generate a ready-to-use reference image prompt from a concept
+  check-ref <image>  validate reference image (1:1 square, white margins, saturation, luminance)
   prep [scene]       downsample, palette, masks, build/parts.png  (default: all examples)
   render [scene]     60fps mp4, gif, compare, contact sheet, smoothness, out/<part>_phases.png
   phases <scene>     out/<part>_phases.png again from an existing out/loop.mp4
@@ -177,11 +239,27 @@ const positionals = rest.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.in
 const portFlag = rest.indexOf("--port");
 const port = portFlag >= 0 ? Number(rest[portFlag + 1]) : 8787;
 
-const scenes = positionals.length ? positionals.map(scenePath) : SCENES.map((s) => path.join(ROOT, s));
-
 if (!cmd || cmd === "help" || cmd === "--help") {
   help();
-} else if (cmd === "prep") {
+  process.exit(0);
+} else if (cmd === "prompt") {
+  const desc = positionals.join(" ") || rest.filter((a) => !a.startsWith("--")).join(" ");
+  generatePrompt(desc);
+  process.exit(0);
+} else if (cmd === "check-ref") {
+  if (!positionals.length) {
+    console.error("check-ref requires an image file path or scene directory (e.g. node cli/pocketworld.js check-ref examples/rain-bus-stop)");
+    process.exit(1);
+  }
+  for (const target of positionals) {
+    await python(["check-ref", resolveRefTarget(target)]);
+  }
+  process.exit(0);
+}
+
+const scenes = positionals.length ? positionals.map(scenePath) : SCENES.map((s) => path.join(ROOT, s));
+
+if (cmd === "prep") {
   for (const s of scenes) await python(["prep", s]);
 } else if (cmd === "render") {
   for (const s of scenes) await renderScene(s);
