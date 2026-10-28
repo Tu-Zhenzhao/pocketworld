@@ -109,6 +109,8 @@ node cli/pocketworld.js parity  # all five examples, six times across the loop
 node cli/pocketworld.js parity examples/rain-bus-stop --times 0,3
 node --test tests/cli.test.js
 "$PYTHON" -m unittest discover -s tests -v
+# Optional UI checks when Playwright is installed (or set PLAYWRIGHT_MODULE):
+node tests/browser-ui.mjs
 ```
 
 Parity writes CPU/browser/difference PNGs and `parity.json` to `build/parity/` (or `--out <directory>`). The default limit is 0.02% differing cells per frame, including any RGB difference, with max and mean channel differences reported separately. Even a threshold-adjacent palette flip can have a large channel delta, so inspect the difference images too. CI checks rain and laundry and an extra fixture covering path, steam and the remaining light/particle modes. Tested dependency versions are in `requirements-test.txt`.

@@ -24,11 +24,13 @@ export async function doctor({ json = false } = {}) {
     const r = await run(PY, ["-c", "import numpy,PIL,json;print(json.dumps(dict(numpy=numpy.__version__,Pillow=PIL.__version__)))"], { timeout: 10000 });
     return JSON.parse(r.stdout);
   }, `Run ${PY} -m pip install -r requirements.txt.`);
+  if (!py) add("python-modules", "skip", "Python executable unavailable");
   const ffmpeg = modules && await check("ffmpeg", async () => {
     const r = await run(PY, ["-c", "import sys;sys.path.insert(0,sys.argv[1]);from pocketworld import get_ffmpeg_path;print(get_ffmpeg_path() or '')", path.join(ROOT, "tools")], { timeout: 10000 });
     if (!r.stdout.trim()) throw new Error("Neither imageio-ffmpeg nor system ffmpeg is available; GIF/PNG fallback remains available.");
     return r.stdout.trim();
   }, "Install imageio-ffmpeg in the selected Python environment, or system ffmpeg.");
+  if (!modules) add("ffmpeg", "skip", "Python dependencies unavailable");
   const chrome = await check("chrome-path", chromePath, "Set CHROME=/path/to/chrome, or use --backend cpu.");
   const workspace = await check("workspace-write", async () => {
     const p = await mkdtemp(path.join(ROOT, ".doctor-"));
@@ -64,10 +66,12 @@ export async function doctor({ json = false } = {}) {
       } catch (e) { add("browser-probe", "fail", null, e.message, "Use --backend cpu; host IPC/WebGL restrictions cannot always be fixed with flags."); }
       finally { await capture?.close(); }
     } else add("browser-probe", "skip", "Chrome or Python prerequisites unavailable", null, "CPU is independent of Chrome.");
+    if (!cpu) add("cpu-frame", "skip", "CPU prerequisites unavailable or CPU frame failed above");
     if (ffmpeg && temporary) encoded = await check("short-encode", async () => {
       await run(ffmpeg, ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=white:s=16x16:r=60", "-frames:v", "2", "-c:v", "libx264", "-pix_fmt", "yuv420p", path.join(tmp, "encode.mp4")], { timeout: 20000 });
       return "libx264: 2 frames encoded";
     }, "Check the ffmpeg binary and libx264 support.");
+    else add("short-encode", "skip", "Encoder or writable temporary directory unavailable");
   } finally { if (tmp) await rm(tmp, { recursive: true, force: true }); }
   const usable = Boolean(node && modules && workspace && temporary && cpu && (!ffmpeg || encoded));
   const result = { usable, backend: usable ? (browser ? "browser" : "cpu") : null,
