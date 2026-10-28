@@ -160,10 +160,11 @@ def oklab_vec(c):
     return lms @ M2.astype(c.dtype).T
 
 
-def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=None):
+def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=None, dither=True):
     """Applies Bayer dither and OKLab palette matching matching GLSL shaders."""
     L = oklab_vec(col)
-    L[..., 0] += (th - 0.5) * spread
+    L[..., 0] += (th - 0.5) * spread * float(dither)
+    paper_threshold = (0.1 + 0.8 * th) if dither else 0.5
 
     # K is the number of palette candidates searched
     K = (uN - 3) if profile == "rain" else (uN - 1)
@@ -185,17 +186,17 @@ def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=Non
     # Paper test
     if profile == "rain":
         cov_test = np.maximum(cov, fx * 0.9)
-        paper_mask = cov_test < (0.1 + 0.8 * th)
+        paper_mask = cov_test < paper_threshold
         outc[paper_mask] = uPal[uN - 3]
         if r is not None:
             rain_paper = paper_mask & (r > 0.22) & (th < r * 1.2)
             outc[rain_paper] = uPal[uN - 2]
     elif profile == "laundry":
-        paper_mask = cov < (0.1 + 0.8 * th)
+        paper_mask = cov < paper_threshold
         outc[paper_mask] = uPal[uN - 1]
     else:  # layers
         cov_test = np.maximum(cov, fx)
-        paper_mask = cov_test < (0.1 + 0.8 * th)
+        paper_mask = cov_test < paper_threshold
         outc[paper_mask] = uPal[uN - 1]
 
     return np.clip(np.round(outc * 255.0), 0, 255).astype(np.uint8)
@@ -348,7 +349,7 @@ def light_env(mode, k, phs, px, py, ph):
         return 0.75 + 0.25 * shader_sin(ph * k + phs)
 
 
-def render_rain_frame(manifest, textures, t):
+def render_rain_frame(manifest, textures, t, dither=True):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
     ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
@@ -561,10 +562,10 @@ def render_rain_frame(manifest, textures, t):
     uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
-    return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "rain", r)
+    return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "rain", r, dither=dither)
 
 
-def render_laundry_frame(manifest, textures, t):
+def render_laundry_frame(manifest, textures, t, dither=True):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
     ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
@@ -664,10 +665,10 @@ def render_laundry_frame(manifest, textures, t):
     uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
-    return dither_and_quantize(col, cov, 0.0, th, spread, uPal, uLab, uN, "laundry")
+    return dither_and_quantize(col, cov, 0.0, th, spread, uPal, uLab, uN, "laundry", dither=dither)
 
 
-def render_layers_frame(manifest, textures, t):
+def render_layers_frame(manifest, textures, t, dither=True):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
     ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
@@ -903,18 +904,18 @@ def render_layers_frame(manifest, textures, t):
     uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
-    return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "layers")
+    return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "layers", dither=dither)
 
 
-def render_frame(manifest, textures, t):
+def render_frame(manifest, textures, t, dither=True):
     t = float(np.float32(float(t) % float(manifest['loop'])))
     profile = manifest['profile']
     if profile == 'rain':
-        return render_rain_frame(manifest, textures, t)
+        return render_rain_frame(manifest, textures, t, dither=dither)
     elif profile == 'laundry':
-        return render_laundry_frame(manifest, textures, t)
+        return render_laundry_frame(manifest, textures, t, dither=dither)
     elif profile == 'layers':
-        return render_layers_frame(manifest, textures, t)
+        return render_layers_frame(manifest, textures, t, dither=dither)
     else:
         raise ValueError(f"Unknown profile: {profile}")
 

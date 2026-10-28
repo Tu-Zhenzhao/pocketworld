@@ -19,6 +19,13 @@ class ShaderMath(unittest.TestCase):
         x=np.array([[.5,1.,-2,4]],np.float32);y=np.array([[.5,1.,-2,4]],np.float32)
         np.testing.assert_allclose(cpu.samp_bilinear(tex,x,y,2)[...,0],[[0,1.5,0,3]])
 
+    def test_no_dither_uses_half_coverage_paper_threshold(self):
+        pal=np.array([[.2,.2,.2],[1,1,1]],np.float32)
+        col=np.full((1,2,3),.2,np.float32);cov=np.array([[.4,.6]],np.float32)
+        result=cpu.dither_and_quantize(col,cov,0,np.array([[0,.9375]],np.float32),.06,
+                                     pal,cpu.oklab_vec(pal),2,'laundry',dither=False)
+        np.testing.assert_array_equal(result,[[[255,255,255],[51,51,51]]])
+
     def test_duty_rest_and_parent_pivot(self):
         self.assertEqual(cpu.stroke(.5,.26,.16),0)
         p=[dict(kind='rigid',pivot=[2,3],amp=1,bias=0,k=3,phase=0,parent=-1),
