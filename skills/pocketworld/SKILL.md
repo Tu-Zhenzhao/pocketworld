@@ -58,7 +58,7 @@ Use `render <scene> --smoke` for ten frames before the full render. Use `--frame
 
 Inspect `build/last-run.json` and `out/render.json`: only a newly completed attempt and matching artifact/input hashes establish success. An old `out/loop.mp4` is not a new result. No ffmpeg means GIF + PNG frames + all diagnostic images/metrics, with explicit `complete-gif-only` status and no MP4. Metrics identify `decoded-mp4` versus `png-frames` as their source. Phase images now read cached frames directly; the generic `motion_phases.png` also covers rain/laundry.
 
-CPU math matches the CLI's SwiftShader software renderer. After changing either shader or CPU code run `node cli/pocketworld.js parity`; it checks all five examples at six times, reports exact differing-cell ratios and channel deltas, and writes difference images. The default gate is 0.02% differing cells. Explain residual threshold flips and inspect their images. Hardware GPU rounding may differ; do not claim universal bit identity.
+CPU math matches the CLI's SwiftShader software renderer (ARM fused / x86 separate multiply-add). `POCKETWORLD_SHADER_MATH=fused|separate` can select a different JIT math mode; it invalidates the frame cache. After changing either shader or CPU code run `node cli/pocketworld.js parity`; it checks all five examples at six times, reports exact differing-cell ratios and channel deltas, and writes difference images. The default gate is 0.02% differing cells. Explain residual threshold flips and inspect their images. Hardware GPU rounding may differ; do not claim universal bit identity.
 
 ### Step 0: Get a good reference image
 

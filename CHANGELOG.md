@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- CPU matrix orientation, ripple index modulo, flicker noise coordinates, float32/FMA hash behavior, palette matching and time wrapping.
+- CPU matrix orientation, ripple index modulo, flicker noise coordinates, architecture-specific float32/FMA hash behavior, palette matching and time wrapping.
 - Failed renders no longer report old artifacts as a successful current run; spawn/encode errors terminate with nonzero status.
 
 ## [0.2.0] - 2026-10-27

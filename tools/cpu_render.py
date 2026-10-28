@@ -8,6 +8,7 @@ import argparse
 import json
 import math
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -38,9 +39,19 @@ M2 = np.array([
 
 CH_WEIGHT = np.array([1.0, 2.0, 2.0], dtype=np.float32)
 
+# SwiftShader lowers LLVM fmuladd differently on its ARM and x86 targets.
+# This is observable after sin's error is magnified by the hash multiplier.
+# The override also supports software-renderer builds with different JIT flags.
+MATH_MODE = os.environ.get('POCKETWORLD_SHADER_MATH',
+                           'fused' if platform.machine().lower() in ('arm64', 'aarch64') else 'separate')
+if MATH_MODE not in ('fused', 'separate'):
+    raise ValueError('POCKETWORLD_SHADER_MATH must be fused or separate')
+
 
 def fma(a, b, c):
-    """One float32 rounding, as used by SwiftShader's MulAdd."""
+    """Match the software reference's architecture-specific MulAdd lowering."""
+    if MATH_MODE == 'separate':
+        return np.asarray(a, dtype=np.float32) * np.asarray(b, dtype=np.float32) + np.asarray(c, dtype=np.float32)
     return (np.asarray(a, dtype=np.float64) * np.asarray(b, dtype=np.float64)
             + np.asarray(c, dtype=np.float64)).astype(np.float32)
 

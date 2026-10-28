@@ -83,7 +83,7 @@ node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 0:3
 node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 360:720
 ```
 
-`--backend auto` is the default: probe Chrome and readPixels, then use CPU if the probe fails. `--backend browser` requires Chrome; `--backend cpu` never starts a browser or server. CPU rendering uses NumPy arrays and the same prepared textures as WebGL. Its numeric reference is the CLI's SwiftShader software WebGL renderer, including its sine/hash approximation. Arbitrary hardware GPU drivers can have different rounding.
+`--backend auto` is the default: probe Chrome and readPixels, then use CPU if the probe fails. `--backend browser` requires Chrome; `--backend cpu` never starts a browser or server. CPU rendering uses NumPy arrays and the same prepared textures as WebGL. Its numeric reference is the CLI's SwiftShader software WebGL renderer, including its sine/hash approximation. SwiftShader uses fused multiply-add on the tested ARM target and separate float32 operations on the tested x86 target; the CPU backend selects that math by architecture. `POCKETWORLD_SHADER_MATH=fused|separate` overrides it for a differently configured JIT build and is included in the cache fingerprint. Arbitrary hardware GPU drivers can have different rounding.
 
 Browser export defaults to `page.setContent()` with inline modules, manifest and PNG data URLs. It rejects all HTTP/file requests and starts no local server. `--server` retains the old localhost path for diagnosis. Configure executable paths and optional extra Chrome arguments with:
 

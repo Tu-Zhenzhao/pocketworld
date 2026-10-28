@@ -13,7 +13,7 @@ import time
 import numpy as np
 from PIL import Image, ImageDraw
 
-from cpu_render import render_frame, load_textures
+from cpu_render import render_frame, load_textures, MATH_MODE
 from pocketworld import load_cfg, open_ref, get_ffmpeg_path, _font, _rings_of, _subject_center, metrics_of
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,7 +48,7 @@ def plan(scene, backend='cpu', fps=60, scale=4, smoke=False, frames=None):
         if not 0 <= start < end <= total: raise ValueError(f'--frames must satisfy 0 <= a < b <= {total}')
     inputs = [scene / 'scene.json', load_cfg(str(scene))['_ref_path'], scene / 'build/manifest.json', *[scene / 'build' / p for p in m['textures'].values()],
               ROOT / 'src/shaders.js', ROOT / 'src/player.js', ROOT / 'tools/cpu_render.py', Path(__file__)]
-    key = digest(inputs, f'{backend}:{fps}:{scale}')
+    key = digest(inputs, f'{backend}:{fps}:{scale}:{MATH_MODE}')
     cache = scene / 'build/frames' / key
     cache.mkdir(parents=True, exist_ok=True)
     ext = 'png' if backend == 'cpu' else 'rgba'
@@ -65,7 +65,7 @@ def plan(scene, backend='cpu', fps=60, scale=4, smoke=False, frames=None):
                         im.verify()
                 except (OSError, ValueError): pass
         if not valid: missing.append(i)
-    result = dict(scene=str(scene), backend=backend, fps=fps, scale=scale, total=total,
+    result = dict(scene=str(scene), backend=backend, shaderMath=MATH_MODE, fps=fps, scale=scale, total=total,
                   start=start, end=end, smoke=smoke, key=key, cache=str(cache), missing=missing, grid=m['grid'])
     atomic_json(scene / 'build/render-state.json', {**result, 'status': 'capturing'})
     return result
@@ -182,7 +182,7 @@ def finish(p):
         if not video:print('WARNING: no ffmpeg; writing GIF + PNG frames + diagnostics (no MP4).',file=sys.stderr)
         present_frames(scene,cache,stage,total,p['fps'],p['scale'],video)
         artifacts={q.name:hashlib.sha256(q.read_bytes()).hexdigest() for q in stage.iterdir() if q.is_file()}
-        result=dict(status='complete' if video else 'complete-gif-only',backend=p['backend'],inputHash=p['key'],
+        result=dict(status='complete' if video else 'complete-gif-only',backend=p['backend'],shaderMath=MATH_MODE,inputHash=p['key'],
                     fps=p['fps'],frames=total,width=G*p['scale'],height=G*p['scale'],cache=str(cache),
                     artifacts=artifacts,encodingSeconds=round(time.monotonic()-started,3))
         atomic_json(stage/'render.json',result)
@@ -221,7 +221,7 @@ def parity(scene, raw_dir, times, max_ratio=.0002):
                          maxChannelDifference=int(d.max()),meanChannelDifference=float(d.mean()),pass_=ratio<=max_ratio))
         Image.fromarray(a).save(dest/f'cpu-{j}.png');Image.fromarray(b).save(dest/f'browser-{j}.png')
         Image.fromarray(np.minimum(d*8,255).astype(np.uint8)).save(dest/f'diff-{j}.png')
-    report=dict(scene=scene.name,maxDifferentRatio=max_ratio,frames=rows,passed=all(r['pass_'] for r in rows))
+    report=dict(scene=scene.name,shaderMath=MATH_MODE,maxDifferentRatio=max_ratio,frames=rows,passed=all(r['pass_'] for r in rows))
     atomic_json(dest/'parity.json',report);print(json.dumps(report));return report
 
 
