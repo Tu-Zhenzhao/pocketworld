@@ -47,8 +47,14 @@ An elderly fisherman on a calm lake at twilight. The slender bamboo rod shivers 
 ## Thirty seconds
 
 ```bash
-npm install
-python3 -m pip install -r requirements.txt
+npm ci
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+export PYTHON="$PWD/.venv/bin/python"
+
+# Optional for browser exports and live previews: install Chrome/Chromium.
+# MP4 encoding uses imageio-ffmpeg's bundled binary; system ffmpeg is a fallback.
+node cli/pocketworld.js doctor
 
 # Generate an image-generation prompt or validate a reference image:
 node cli/pocketworld.js prompt "a quiet bus stop in the rain at dusk"
@@ -60,7 +66,54 @@ node cli/pocketworld.js render examples/rain-bus-stop
 npm run dev
 ```
 
-The playground is `http://127.0.0.1:8787/playground/`. `render` writes a 60 fps MP4, a GIF, a side-by-side compare, a contact sheet, and a smoothness number.
+The playground is `http://127.0.0.1:8787/playground/`. `render` writes a 60 fps MP4, a GIF, a side-by-side compare, contact sheets, motion phase strips, and smoothness metrics. Node >=20 and Python >=3.10 are recommended. The browser component still requires WebGL2; CPU export does not.
+
+## Personal agents and cloud sandboxes
+
+Start with `doctor`. It checks Python modules, writable directories, browser launch, inline page loading, WebGL2/readPixels, a CPU frame and a short libx264 encode. `doctor --json` returns each stage, its original error and a suggestion, plus the backend this environment will select. A missing browser is reported but is not a fatal error when CPU rendering works.
+
+```bash
+export PYTHON="$PWD/.venv/bin/python"
+node cli/pocketworld.js doctor --json
+node cli/pocketworld.js render examples/rain-bus-stop --smoke
+node cli/pocketworld.js render examples/rain-bus-stop --backend cpu
+
+# Half-open frame ranges, 0 through 719. The second run completes and encodes.
+node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 0:360
+node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 360:720
+```
+
+`--backend auto` is the default: probe Chrome and readPixels, then use CPU if the probe fails. `--backend browser` requires Chrome; `--backend cpu` never starts a browser or server. CPU rendering uses NumPy arrays and the same prepared textures as WebGL. Its numeric reference is the CLI's SwiftShader software WebGL renderer, including its sine/hash approximation. Arbitrary hardware GPU drivers can have different rounding.
+
+Browser export defaults to `page.setContent()` with inline modules, manifest and PNG data URLs. It rejects all HTTP/file requests and starts no local server. `--server` retains the old localhost path for diagnosis. Configure executable paths and optional extra Chrome arguments with:
+
+```bash
+export CHROME="/path/to/chrome"
+export CHROME_FLAGS="--disable-dev-shm-usage"
+# Optional authoritative ffmpeg override; normally imageio-ffmpeg supplies it.
+export FFMPEG_PATH="/path/to/ffmpeg"
+```
+
+An explicit `CHROME` path is authoritative, so `CHROME=/nonexistent` reliably exercises CPU fallback. Chrome launch retries use fresh temporary profiles and bounded timeouts; flags cannot grant permissions forbidden by the host.
+
+`--smoke` captures ten frames without changing `out/`. Frame ranges also leave `out/` alone until all 720 frames are available. The cache under `build/frames/<input-hash>/` includes textures, source inputs, renderer code, backend and frame settings; changed inputs get a new cache. Corrupt PNGs are regenerated. `--force-prep` rebuilds inputs; ordinary rendering also detects changed scene/reference/prep code and newer input mtimes.
+
+A complete run stages its new artifacts before publishing, writes `out/render.json` with the input hash and artifact hashes, and records the latest attempt in `build/last-run.json`. A failed attempt exits nonzero and does not claim the old `out/` as new output. Do not infer success merely from an existing MP4. Do not run concurrent renders of the same scene.
+
+If neither bundled nor system ffmpeg is available, rendering still writes PNG frames, a Pillow GIF, compare/contact/phase images and frame-based metrics; it clearly reports `complete-gif-only` and does not leave an old MP4 labelled as current. `metrics.json.source` distinguishes decoded-video measurements from PNG measurements. GIFs run at 20 fps; MP4s remain 60 fps.
+
+## Renderer verification
+
+```bash
+node cli/pocketworld.js parity  # all five examples, six times across the loop
+node cli/pocketworld.js parity examples/rain-bus-stop --times 0,3
+node --test tests/cli.test.js
+"$PYTHON" -m unittest discover -s tests -v
+```
+
+Parity writes CPU/browser/difference PNGs and `parity.json` to `build/parity/` (or `--out <directory>`). The default limit is 0.02% differing cells per frame, including any RGB difference, with max and mean channel differences reported separately. Even a threshold-adjacent palette flip can have a large channel delta, so inspect the difference images too. CI checks rain and laundry and an extra fixture covering path, steam and the remaining light/particle modes. Tested dependency versions are in `requirements-test.txt`.
+
+`prompt` creates text for an external image model; it does not call a model or automatically trace scene masks.
 
 ```html
 <script type="module" src="/src/element.js"></script>

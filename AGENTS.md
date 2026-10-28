@@ -21,11 +21,18 @@ The default mode is from-reference. Do not draw figures with SDFs. That experime
 
 Runtime code is `src/`. Prep is `tools/pocketworld.py`, driven by `node cli/pocketworld.js`. Scenes are `examples/*/scene.json` plus `reference.jpg`.
 
+Before making a scene, run `node cli/pocketworld.js doctor --json`. Set `PYTHON` to the Python venv executable. A missing Chrome is acceptable when the CPU frame and encoding checks pass. Use `--backend cpu` in browser-restricted hosts; do not keep adding flags to bypass host restrictions.
+
 ```bash
+node cli/pocketworld.js doctor --json
 node cli/pocketworld.js prep examples/rain-bus-stop
 node cli/pocketworld.js render examples/rain-bus-stop
 node cli/pocketworld.js dev
 ```
+
+`render` defaults to `--backend auto` (inline browser probe, then CPU fallback). Browser export has no HTTP requests; `--server` is only a diagnostic fallback. `--smoke` writes 10 cached frames without publishing, `--frames 0:360` then `--frames 360:720` resumes and encodes. Inputs and renderer code fingerprint the frame cache. Do not render the same scene concurrently.
+
+Check `build/last-run.json` and `out/render.json`; old files in `out/` are not proof of a new successful render. Without ffmpeg, GIF/PNG diagnostics still work and status is `complete-gif-only`. Run `parity` after changing shader or CPU math; update both implementations together. The CPU numeric reference is SwiftShader, not arbitrary hardware GPU math.
 
 `index.js` does not register `<pocket-world>`. The element is `src/element.js`.
 
