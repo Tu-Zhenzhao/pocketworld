@@ -52,7 +52,7 @@ export async function deliver(sceneDir,out,formats,{variant}={}){
   if(!alpha.empty||!alpha.solid)throw Error('Expected visible scene and transparent margins; check actual alpha.');
   const capture=async(t,file)=>{const png=await page.evaluate(t=>window.pocketworld.capture(t,1),t);await fs.writeFile(file,Buffer.from(png,'base64'))};
   await capture(0,path.join(out,'poster.png'));
-  const scale=3,side=grid*scale;
+  const scale=grid%2===0?3:4,side=grid*scale; // H.264/yuv420p needs even dimensions; retain integer pixel scaling.
   if(formats.includes('component')){
    const componentURL=await bundle(path.join(out,'component-module.js'));await fs.writeFile(path.join(out,'component.js'),`// Pocketworld standalone scene. WebGL2 and CSP data: imports required.\nexport * from ${JSON.stringify(componentURL)};\n`);
    await fs.writeFile(path.join(out,'embed.html'),`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Transparent Pocketworld</title><body style="background:#293136;color:white;font-family:sans-serif"><p>透明组件：背景由宿主提供</p><script type="module" src="component.js"></script><${data.componentTag}></${data.componentTag}><${data.componentTag} paused style="background:#d9bda3"></${data.componentTag}>`);

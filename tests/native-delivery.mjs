@@ -13,6 +13,7 @@ const root=await fs.mkdtemp(path.join(os.tmpdir(),'pw-delivery-test-')),source=p
 const full=path.join(root,'full'),preview=path.join(root,'preview');
 const checks=[];function ok(name,value){assert(value,name);checks.push(name)}
 await deliver(source,full,['video','gif','component']);await deliver(source,preview,['preview']);
+const oddSource=path.join(root,'odd-source'),oddOutput=path.join(root,'odd');await fs.cp(source,oddSource,{recursive:true});const oddFile=path.join(oddSource,'scene.js');await fs.writeFile(oddFile,(await fs.readFile(oddFile,'utf8')).replace('grid:48','grid:49'));await deliver(oddSource,oddOutput,['video']);const oddProbe=spawnSync(process.env.FFPROBE_PATH||'ffprobe',['-v','error','-select_streams','v:0','-show_entries','stream=width,height','-of','json',path.join(oddOutput,'loop.mp4')],{encoding:'utf8'});assert.equal(oddProbe.status,0,oddProbe.stderr);const oddStream=JSON.parse(oddProbe.stdout).streams[0];ok('odd native grid encodes at an integer scale with even dimensions',oddStream.width===196&&oddStream.height===196);
 await assert.rejects(deliver(source,full,['preview']),/already exists/);checks.push('existing output protected');
 const {server,port}=await startServer(root),browser=await chromium.launch({executablePath:chromePath(),headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox']});
 try{

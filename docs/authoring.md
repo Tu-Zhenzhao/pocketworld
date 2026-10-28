@@ -43,4 +43,4 @@ node cli/pocketworld.js render skills/pocketworld/assets/examples/juggler \
 
 Use a fresh output directory. The helper refuses to overwrite an existing result. It captures new RGBA frames and lists actual files/hashes in `manifest.json`. Review that manifest and verify encoded output before handoff. A generated artifact is not an aesthetic approval.
 
-Video/GIF need ffmpeg. The component needs WebGL2 and a host that allows scripts; [embedding](embedding.md) covers both standalone and module source.
+Video/GIF need ffmpeg. Exports use integer scaling; odd native grids use ×4 so H.264 output dimensions stay even. The component needs WebGL2 and a host that allows scripts; [embedding](embedding.md) covers both standalone and module source.
