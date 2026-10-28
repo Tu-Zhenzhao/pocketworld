@@ -48,6 +48,18 @@ Do at least two rounds. For each round, `REPORT.md` lists the issues found, the 
 
 ## Standard flow
 
+### Environment first (v0.3.0)
+
+Run `node cli/pocketworld.js doctor --json` before creating or rendering a scene. Use a Python venv, `pip install -r requirements.txt`, and set `PYTHON` to its executable. Doctor reports the selected backend and raw stage errors. Missing Chrome is nonfatal when the CPU frame and encoding checks pass; host permissions cannot always be fixed with Chrome flags.
+
+`render` defaults to `--backend auto`: a bounded inline browser/WebGL/readPixels probe, then CPU fallback. `--backend cpu` never launches Chrome. Browser export inlines all resources and blocks HTTP/file requests; use `--server` only to diagnose the legacy localhost path. `CHROME` selects an executable; `CHROME_FLAGS` appends space-separated launch arguments. `imageio-ffmpeg` supplies the preferred encoder, followed by system ffmpeg; `FFMPEG_PATH` is an authoritative optional override.
+
+Use `render <scene> --smoke` for ten frames before the full render. Use `--frames 0:360` then `--frames 360:720` to split the 720-frame run. Both commands use an input/code fingerprint under `build/frames/`; complete frames are reused, changed inputs receive a new cache. Smoke/partial runs do not publish `out/`. Avoid concurrent renders of one scene. Newer scene/reference inputs or changed prep code automatically trigger prep; `--force-prep` forces it.
+
+Inspect `build/last-run.json` and `out/render.json`: only a newly completed attempt and matching artifact/input hashes establish success. An old `out/loop.mp4` is not a new result. No ffmpeg means GIF + PNG frames + all diagnostic images/metrics, with explicit `complete-gif-only` status and no MP4. Metrics identify `decoded-mp4` versus `png-frames` as their source. Phase images now read cached frames directly; the generic `motion_phases.png` also covers rain/laundry.
+
+CPU math matches the CLI's SwiftShader software renderer (ARM fused / x86 separate multiply-add). `POCKETWORLD_SHADER_MATH=fused|separate` can select a different JIT math mode; it invalidates the frame cache. After changing either shader or CPU code run `node cli/pocketworld.js parity`; it checks all five examples at six times, reports exact differing-cell ratios and channel deltas, and writes difference images. The default gate is 0.02% differing cells. Explain residual threshold flips and inspect their images. Hardware GPU rounding may differ; do not claim universal bit identity.
+
 ### Step 0: Get a good reference image
 
 Read `skills/pocketworld/reference_prompt.md` first. The painting is the base layer of the entire pipeline. The WebGL shader only translates, rotates, and warps existing pixels before quantizing them through an OKLab palette and a 4×4 Bayer dither. It cannot fix bad drawing, wrong perspective, muddy contrast, or cartoon outlines.

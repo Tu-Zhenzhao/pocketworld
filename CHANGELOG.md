@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-28
+
+### Added
+
+- Vectorized NumPy renderer for rain, laundry and all generic motion categories, with SwiftShader-compatible sine/hash math, texture sampling, parent transforms, duty/snap and loop wrapping.
+- `render --backend auto|cpu|browser`, fingerprinted resumable `--frames a:b`, ten-frame `--smoke`, and automatic stale-build detection / `--force-prep`.
+- Inline browser capture without a server or network requests, bounded launch retries with temporary profiles, `CHROME_FLAGS`, and legacy `--server` mode.
+- `doctor [--json]` with staged environment, CPU, browser and encoding probes; `parity` with difference images and a 0.02% cell gate; parity CI.
+- Bundled imageio-ffmpeg encoding with system fallback; browser-free GIF/PNG diagnostics when no encoder exists.
+- Staged output publication, artifact hashes, latest-attempt status and failure/timeout cleanup; motion phase sheets for every profile.
+
+### Fixed
+
+- CPU matrix orientation, ripple index modulo, flicker noise coordinates, architecture-specific float32/FMA hash behavior, palette matching and time wrapping.
+- Failed renders no longer report old artifacts as a successful current run; spawn/encode errors terminate with nonzero status.
+
 ## [0.2.0] - 2026-10-27
 
 ### Added

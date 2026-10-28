@@ -10,3 +10,12 @@ __pycache__/
 overlay.png
 suggest.png
 suggest.json
+# Local render caches and run diagnostics (approved example artifacts stay tracked).
+**/build/prep-state.json
+**/build/render-state.json
+**/build/last-run.json
+**/build/parity/
+**/out/render.json
+.pocketworld-out-*/
+.doctor-*/
+.venv/

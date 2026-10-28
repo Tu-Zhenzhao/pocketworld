@@ -1,167 +1,18 @@
 #!/usr/bin/env node
-/**
- * pocketworld prep | render | phases | overlay | suggest | dev
- *
- *   node cli/pocketworld.js prep examples/rain-bus-stop
- *   node cli/pocketworld.js render examples/rain-bus-stop
- *   node cli/pocketworld.js dev
- */
-import { createServer } from "node:http";
-import { readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { spawn } from "node:child_process";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import puppeteer from "puppeteer-core";
+import { ROOT } from "./browser.js";
+import { python } from "./environment.js";
+import { startServer } from "./server.js";
+import { ensurePrepared, renderScene, runParity } from "./render.js";
+import { doctor } from "./doctor.js";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PY = process.env.PYTHON || "python3";
-const TOOL = path.join(ROOT, "tools", "pocketworld.py");
-const SCENES = [
-  "examples/rain-bus-stop",
-  "examples/rooftop-laundry",
-  "examples/chess-under-tree",
-  "examples/snow-campfire",
-  "examples/lake-boat",
-];
-
-const MIME = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".mp4": "video/mp4",
-  ".css": "text/css",
-  ".md": "text/markdown; charset=utf-8",
-};
-
+const SCENES = ["rain-bus-stop", "rooftop-laundry", "chess-under-tree", "snow-campfire", "lake-boat"];
 function scenePath(arg) {
-  const candidates = [path.resolve(arg), path.join(ROOT, arg), path.join(ROOT, "examples", arg)];
-  for (const c of candidates) {
+  for (const c of [path.resolve(arg), path.join(ROOT, arg), path.join(ROOT, "examples", arg)]) {
     if (existsSync(path.join(c, "scene.json"))) return c;
   }
   throw new Error(`no scene.json for ${arg}`);
-}
-
-function python(args) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(PY, [TOOL, ...args], { stdio: "inherit" });
-    child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`python exited ${code}`))));
-  });
-}
-
-function chromePath() {
-  const candidates = [
-    process.env.CHROME,
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-  ].filter(Boolean);
-  const found = candidates.find((p) => existsSync(p));
-  if (!found) throw new Error("Chrome not found. Set CHROME=/path/to/chrome");
-  return found;
-}
-
-function startServer(port = 0) {
-  const server = createServer(async (req, res) => {
-    try {
-      const url = new URL(req.url, "http://127.0.0.1");
-      let name = decodeURIComponent(url.pathname);
-      if (name.endsWith("/")) name += "index.html";
-      name = path.normalize(name).replace(/^(\.\.(\/|\\|$))+/, "");
-      const file = path.resolve(ROOT, "." + (name.startsWith("/") ? name : "/" + name));
-      if (file !== ROOT && !file.startsWith(ROOT + path.sep)) {
-        res.writeHead(403);
-        res.end();
-        return;
-      }
-      const body = await readFile(file);
-      const ext = path.extname(file);
-      res.writeHead(200, { "content-type": MIME[ext] || "application/octet-stream", "cache-control": "no-store" });
-      res.end(body);
-    } catch {
-      res.writeHead(404);
-      res.end("not found");
-    }
-  });
-  return new Promise((resolve) => {
-    server.listen(port, "127.0.0.1", () => {
-      const addr = server.address();
-      resolve({ server, port: addr.port });
-    });
-  });
-}
-
-async function renderScene(scene) {
-  const manifest = path.join(scene, "build", "manifest.json");
-  if (!existsSync(manifest)) {
-    console.log("prep", path.relative(ROOT, scene));
-    await python(["prep", scene]);
-  }
-  const outDir = path.join(scene, "out");
-  await mkdir(outDir, { recursive: true });
-  const mp4 = path.join(outDir, "loop.mp4");
-  const { server, port } = await startServer(0);
-  const rel = path.relative(ROOT, manifest).split(path.sep).join("/");
-  const browser = await puppeteer.launch({
-    executablePath: chromePath(),
-    headless: "new",
-    args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--no-sandbox", "--ignore-gpu-blocklist"],
-  });
-  try {
-    const page = await browser.newPage();
-    page.on("pageerror", (e) => console.error("PAGEERR", e.message));
-    page.on("console", (m) => {
-      if (m.type() === "error") console.error("console", m.text());
-    });
-    await page.setViewport({ width: 1200, height: 1200, deviceScaleFactor: 1 });
-    await page.goto(`http://127.0.0.1:${port}/cli/page.html?scene=/${rel}&scale=1&t=0`, { waitUntil: "networkidle0" });
-    await page.waitForFunction("window.isReady && window.isReady()", { timeout: 60000 });
-    const info = await page.evaluate("info()");
-    const G = info.w;
-    const fps = 60;
-    const n = Math.round(info.loop * fps);
-    const ff = spawn("ffmpeg", [
-      "-v", "error", "-y",
-      "-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${G}x${G}`, "-r", String(fps), "-i", "-",
-      "-vf", "vflip,scale=iw*4:ih*4:flags=neighbor",
-      "-c:v", "libx264", "-preset", "slow", "-crf", "12", "-tune", "animation",
-      "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4,
-    ]);
-    const ffError = new Promise((_, reject) => {
-      let err = "";
-      ff.stderr.on("data", (d) => { err += d; });
-      ff.on("exit", (code) => { if (code) reject(new Error(err || `ffmpeg ${code}`)); });
-    });
-    const t0 = Date.now();
-    for (let i = 0; i < n; i++) {
-      const b64 = await page.evaluate((t) => grab(t), i / fps);
-      const buf = Buffer.from(b64, "base64");
-      if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once("drain", r));
-      if (i % 120 === 0) console.log(path.basename(scene), i, "/", n, ((Date.now() - t0) / 1000).toFixed(1) + "s");
-    }
-    ff.stdin.end();
-    await Promise.race([
-      new Promise((r) => ff.on("close", r)),
-      ffError,
-    ]);
-    console.log("wrote", path.relative(ROOT, mp4));
-  } finally {
-    await browser.close();
-    server.close();
-  }
-  await python(["present", scene]);
-}
-
-async function dev(port) {
-  const { server, port: actual } = await startServer(port);
-  console.log(`pocketworld  http://127.0.0.1:${actual}/playground/`);
-  await new Promise(() => server);
 }
 
 function generatePrompt(desc) {
@@ -233,7 +84,14 @@ function help() {
   prompt [desc]      generate a ready-to-use reference image prompt from a concept
   check-ref <image>  validate reference image (1:1 square, white margins, saturation, luminance)
   prep [scene]       downsample, palette, masks, build/parts.png  (default: all examples)
-  render [scene]     60fps mp4, gif, compare, contact sheet, smoothness, out/<part>_phases.png
+  render [scene]     60fps mp4, gif, compare, contact, metrics and motion phases
+    --backend auto|cpu|browser  auto probes Chrome, falls back to CPU (default)
+    --smoke         capture 10 frames; do not replace out/
+    --frames a:b    capture a half-open frame range; resume and encode when complete
+    --server        browser only: use the legacy localhost page
+    --force-prep    rebuild even if inputs have not changed
+  doctor [--json]    environment checks and selected render backend
+  parity [scene]    CPU vs browser; --times 0,3 --max-ratio 0.001 --out <directory>
   phases <scene>     out/<part>_phases.png again from an existing out/loop.mp4
   overlay <scene>    coordinate grid on the reference
   suggest <scene>    key-colour and cloth/wet guesses
@@ -241,50 +99,46 @@ function help() {
 `);
 }
 
+
 const [cmd, ...rest] = process.argv.slice(2);
-// flags that take a value; their value is not a scene path
-const VALUE_FLAGS = ["--step", "--port"];
-const positionals = rest.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.includes(rest[i - 1]));
-const portFlag = rest.indexOf("--port");
-const port = portFlag >= 0 ? Number(rest[portFlag + 1]) : 8787;
-
-if (!cmd || cmd === "help" || cmd === "--help") {
-  help();
-  process.exit(0);
-} else if (cmd === "prompt") {
-  const desc = positionals.join(" ") || rest.filter((a) => !a.startsWith("--")).join(" ");
-  generatePrompt(desc);
-  process.exit(0);
-} else if (cmd === "check-ref") {
-  if (!positionals.length) {
-    console.error("check-ref requires an image file path or scene directory (e.g. node cli/pocketworld.js check-ref examples/rain-bus-stop)");
-    process.exit(1);
+const valueFlags = new Set(["--step", "--port", "--backend", "--frames", "--times", "--max-ratio", "--out"]);
+const values = {}, positionals = [];
+try {
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (valueFlags.has(a)) {
+      if (!rest[i + 1] || rest[i + 1].startsWith("--")) throw new Error(`missing value for ${a}`);
+      values[a] = rest[++i];
+    } else if (a.startsWith("--")) {
+      if (!["--smoke", "--server", "--force-prep", "--json"].includes(a)) throw new Error(`unknown option ${a}`);
+      values[a] = true;
+    } else positionals.push(a);
   }
-  for (const target of positionals) {
-    await python(["check-ref", resolveRefTarget(target)]);
-  }
-  process.exit(0);
-}
-
-const scenes = positionals.length ? positionals.map(scenePath) : SCENES.map((s) => path.join(ROOT, s));
-
-if (cmd === "prep") {
-  for (const s of scenes) await python(["prep", s]);
-} else if (cmd === "render") {
-  for (const s of scenes) await renderScene(s);
-} else if (cmd === "phases") {
-  if (!positionals.length) throw new Error("phases needs a scene");
-  for (const s of scenes) await python(["phases", s]);
-} else if (cmd === "overlay") {
-  if (!positionals.length) throw new Error("overlay needs a scene");
-  const step = rest.includes("--step") ? ["--step", rest[rest.indexOf("--step") + 1]] : [];
-  for (const s of scenes) await python(["overlay", s, ...step]);
-} else if (cmd === "suggest") {
-  if (!positionals.length) throw new Error("suggest needs a scene");
-  for (const s of scenes) await python(["suggest", s]);
-} else if (cmd === "dev") {
-  await dev(port);
-} else {
-  help();
-  process.exit(1);
+  const opts = { backend: values["--backend"], frames: values["--frames"], smoke: values["--smoke"],
+    server: values["--server"], forcePrep: values["--force-prep"], times: values["--times"],
+    maxRatio: values["--max-ratio"], directory: values["--out"] };
+  if (opts.smoke && opts.frames) throw new Error("choose either --smoke or --frames a:b");
+  if (!cmd || ["help", "--help"].includes(cmd)) help();
+  else if (cmd === "prompt") generatePrompt(positionals.join(" "));
+  else if (cmd === "doctor") {
+    const result = await doctor({ json: values["--json"] });
+    if (!result.usable) process.exitCode = 1;
+  } else if (cmd === "check-ref") {
+    if (!positionals.length) throw new Error("check-ref needs an image or scene directory");
+    for (const p of positionals) await python(["check-ref", resolveRefTarget(p)], { echo: true });
+  } else if (cmd === "dev") {
+    const { port } = await startServer(ROOT, Number(values["--port"] || 8787));
+    console.log(`pocketworld  http://127.0.0.1:${port}/playground/`);
+  } else if (["prep", "render", "parity", "phases", "overlay", "suggest"].includes(cmd)) {
+    if (["phases", "overlay", "suggest"].includes(cmd) && !positionals.length) throw new Error(`${cmd} needs a scene`);
+    for (const scene of (positionals.length ? positionals : SCENES).map(scenePath)) {
+      if (cmd === "prep") await ensurePrepared(scene, true);
+      else if (cmd === "render") await renderScene(scene, opts);
+      else if (cmd === "parity") await runParity(scene, opts);
+      else await python([cmd, scene, ...(cmd === "overlay" && values["--step"] ? ["--step", values["--step"]] : [])], { echo: true });
+    }
+  } else throw new Error(`unknown command ${cmd}`);
+} catch (error) {
+  console.error(`pocketworld: ${error.message}`);
+  process.exitCode = 1;
 }
