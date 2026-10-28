@@ -28,15 +28,49 @@ M1 = np.array([
     [0.4122214708, 0.5363325363, 0.0514459929],
     [0.2119034982, 0.6806995451, 0.1073969566],
     [0.0883024619, 0.2817188376, 0.6299787005],
-], dtype=np.float32)
+], dtype=np.float64)
 
 M2 = np.array([
     [0.2104542553, 0.7936177850, -0.0040720468],
     [1.9779984951, -2.4285922050, 0.4505937099],
     [0.0259040371, 0.7827717662, -0.8086757660],
-], dtype=np.float32)
+], dtype=np.float64)
 
 CH_WEIGHT = np.array([1.0, 2.0, 2.0], dtype=np.float32)
+
+
+def fma(a, b, c):
+    """One float32 rounding, as used by SwiftShader's MulAdd."""
+    return (np.asarray(a, dtype=np.float64) * np.asarray(b, dtype=np.float64)
+            + np.asarray(c, dtype=np.float64)).astype(np.float32)
+
+
+def shader_sin(x):
+    """Match the software WebGL reference, not libm's different sin approximation.
+
+    SwiftShader ShaderCore.cpp Sin/Sin5: range reduction + degree-5 polynomial.
+    https://github.com/google/swiftshader/blob/master/src/Pipeline/ShaderCore.cpp
+    A tiny sin error becomes a different random value after fract(sin(x)*43758).
+    """
+    x = np.asarray(x, dtype=np.float32)
+    h = fma(x, np.float32(-1 / (2 * np.float32(math.pi))), np.float32(.25))
+    z = np.float32(.25) - np.abs(h - np.rint(h))
+    z2 = z * z
+    a = np.float32((36288 - 20736 * math.sqrt(3)) / 5)
+    b = np.float32(288 * math.sqrt(3) - 540)
+    c = np.float32((47 - 9 * math.sqrt(3)) / 5)
+    return fma(fma(a, z2, b), z2, c) * z
+
+
+def shader_cos(x):
+    x = np.asarray(x, dtype=np.float32)
+    h = x * np.float32(1 / (2 * np.float32(math.pi)))
+    z = np.float32(.25) - np.abs(h - np.rint(h))
+    z2 = z * z
+    a = np.float32((36288 - 20736 * math.sqrt(3)) / 5)
+    b = np.float32(288 * math.sqrt(3) - 540)
+    c = np.float32((47 - 9 * math.sqrt(3)) / 5)
+    return fma(fma(a, z2, b), z2, c) * z
 
 
 def fract(x):
@@ -46,15 +80,15 @@ def fract(x):
 def hash_xy(x, y):
     x = np.asarray(x, dtype=np.float32)
     y = np.asarray(y, dtype=np.float32)
-    d = x * np.float32(127.1) + y * np.float32(311.7)
-    s = np.sin(d) * np.float32(43758.5453)
+    d = fma(y, np.float32(311.7), x * np.float32(127.1))
+    s = shader_sin(d) * np.float32(43758.5453)
     return fract(s)
 
 
 def hash1(n):
     n = np.asarray(n, dtype=np.float32)
     d = n * np.float32(91.345)
-    s = np.sin(d) * np.float32(43758.5453)
+    s = shader_sin(d) * np.float32(43758.5453)
     return fract(s)
 
 
@@ -111,8 +145,8 @@ def samp_bilinear(tex, px, py, G):
 def oklab_vec(c):
     c = np.clip(c, 0.0, 1.0)
     c_lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-    lms = np.maximum(c_lin @ M1.T, 0.0) ** (1.0 / 3.0)
-    return lms @ M2.T
+    lms = np.maximum(c_lin @ M1.astype(c.dtype).T, 0.0) ** (1.0 / 3.0)
+    return lms @ M2.astype(c.dtype).T
 
 
 def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=None):
@@ -152,18 +186,10 @@ def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=Non
 
     return np.clip(np.round(outc * 255.0), 0, 255).astype(np.uint8)
 
-def rain_layer(px, py, t, slope, length, rep, slot, dens, wid, seed, loop):
-    """Vectorized GLSL rainLayer."""
-    u = px + py * slope
-    lane_val = px.shape[1]  # will pass lane directly
-    # Note: caller will pass lane
-    pass
-
-
 def rain_layer_calc(px, py, t, slope, lane, length, rep, slot, dens, wid, seed, loop):
     u = px + py * slope
     li = np.floor(u / lane).astype(np.float32)
-    off = (hash1(li * 3.7 + seed) - 0.5) * (lane - 2.0 * wid)
+    off = (hash1(li * np.float32(3.7) + np.float32(seed)) - 0.5) * (lane - 2.0 * wid)
     du = (u - (li + 0.5) * lane - off) / math.sqrt(1.0 + slope * slope)
     across = np.exp(-du * du / (2.0 * wid * wid))
 
@@ -176,7 +202,7 @@ def rain_layer_calc(px, py, t, slope, lane, length, rep, slot, dens, wid, seed, 
     py_m = py[mask]
     across_m = across[mask]
 
-    v = py_m - (rep / loop) * t + hash1(li_m * 7.1 + seed) * rep
+    v = py_m - (rep / loop) * t + hash1(li_m * np.float32(7.1) + np.float32(seed)) * rep
     k = np.mod(np.floor(v / slot), rep / slot)
     h_dens = hash_xy(li_m + seed * 13.0, k)
     dens_mask = h_dens <= dens
@@ -200,13 +226,13 @@ def rain_layer_calc(px, py, t, slope, lane, length, rep, slot, dens, wid, seed, 
 
 
 def breeze(s, ph, phase):
-    return (np.sin(ph * 3.0 - TAU * 0.65 * s + phase) +
-            0.22 * np.sin(ph * 6.0 - TAU * 1.3 * s + 2.0 * phase + 1.0)) * (
-            0.82 + 0.18 * np.sin(ph + phase * 0.7))
+    return (shader_sin(ph * 3.0 - TAU * 0.65 * s + phase) +
+            0.22 * shader_sin(ph * 6.0 - TAU * 1.3 * s + 2.0 * phase + 1.0)) * (
+            0.82 + 0.18 * shader_sin(ph + phase * 0.7))
 
 
 def breeze_d(s, ph, phase):
-    return np.cos(ph * 3.0 - TAU * 0.65 * s + phase)
+    return shader_cos(ph * 3.0 - TAU * 0.65 * s + phase)
 
 
 def cloth_disp(f, ph):
@@ -228,9 +254,9 @@ def mote_field(px, py, ph, uMote, uNM):
     mo = np.zeros_like(px, dtype=np.float32)
     for i in range(min(8, uNM)):
         fi = float(i)
-        cen_x = uMote[i][0] + 5.0 * math.sin(ph + fi * 1.7) + 2.0 * math.sin(ph * 2.0 + fi)
-        cen_y = uMote[i][1] - 4.0 * math.cos(ph + fi * 1.7) + 1.5 * math.cos(ph * 3.0 + fi * 2.3)
-        tw = 0.5 + 0.5 * math.sin(ph * 3.0 + fi * 2.1)
+        cen_x = uMote[i][0] + 5.0 * shader_sin(ph + fi * 1.7) + 2.0 * shader_sin(ph * 2.0 + fi)
+        cen_y = uMote[i][1] - 4.0 * shader_cos(ph + fi * 1.7) + 1.5 * shader_cos(ph * 3.0 + fi * 2.3)
+        tw = 0.5 + 0.5 * shader_sin(ph * 3.0 + fi * 2.1)
         ex = px - cen_x
         ey = py - cen_y
         dist2 = ex * ex + ey * ey
@@ -283,9 +309,9 @@ def steam_puff(px, py, origin, ph):
     for i in range(3):
         fi = float(i)
         age = fract(ph / float(TAU) * 3.0 + fi / 3.0)
-        qx = origin[0] + 1.6 * math.sin(ph * 2.0 + fi * 2.1)
+        qx = origin[0] + 1.6 * shader_sin(ph * 2.0 + fi * 2.1)
         qy = origin[1] - age * 16.0
-        w = math.sin(math.pi * age)
+        w = shader_sin(math.pi * age)
         ex = px - qx
         ey = py - qy
         dist2 = ex * ex + ey * ey
@@ -295,23 +321,23 @@ def steam_puff(px, py, origin, ph):
 
 def light_env(mode, k, phs, px, py, ph):
     if mode < 0.5:
-        return 0.5 + 0.5 * np.sin(ph * k + phs)
+        return 0.5 + 0.5 * shader_sin(ph * k + phs)
     elif mode < 1.5:
-        c1, s1 = math.cos(ph * k + phs), math.sin(ph * k + phs)
-        c2, s2 = math.cos(ph * 13.0), math.sin(ph * 13.0)
+        c1, s1 = shader_cos(ph * k + phs), shader_sin(ph * k + phs)
+        c2, s2 = shader_cos(ph * 13.0), shader_sin(ph * 13.0)
         n1 = noise(np.float32(3.0 * c1), np.float32(3.0 * s1))
-        n2 = noise(np.float32(5.3 + 2.0 * c2), np.float32(2.0 * s2))
+        n2 = noise(np.float32(5.3 + 2.0 * c2), np.float32(5.3 + 2.0 * s2))
         return 0.55 * n1 + 0.45 * n2
     elif mode < 2.5:
-        return np.power(0.5 + 0.5 * np.sin(ph * k + phs - (px + py) * 0.15), 14.0)
+        return np.power(0.5 + 0.5 * shader_sin(ph * k + phs - (px + py) * 0.15), 14.0)
     else:
-        return 0.75 + 0.25 * np.sin(ph * k + phs)
+        return 0.75 + 0.25 * shader_sin(ph * k + phs)
 
 
 def render_rain_frame(manifest, textures, t):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
-    ph = float(TAU * t / loop)
+    ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
     uPivot = np.array(manifest.get('pivot', [0, 0]), dtype=np.float32)
 
     cx = np.arange(G, dtype=np.float32)[None, :]
@@ -337,18 +363,19 @@ def render_rain_frame(manifest, textures, t):
     cov = uMask2[..., 0].copy()
 
     # umbrella sway
-    sw = math.radians(1.7) * math.sin(ph * 3.0 + 0.6)
-    cos_sw, sin_sw = math.cos(sw), math.sin(sw)
+    sw = math.radians(1.7) * shader_sin(ph * 3.0 + 0.6)
+    cos_sw, sin_sw = shader_cos(sw), shader_sin(sw)
     dx = px - uPivot[0]
     dy = py - uPivot[1]
-    pu_x = uPivot[0] + cos_sw * dx - sin_sw * dy
-    pu_y = uPivot[1] + sin_sw * dx + cos_sw * dy
+    # GLSL mat2 is column-major: mat2(cs,-sn,sn,cs).
+    pu_x = uPivot[0] + cos_sw * dx + sin_sw * dy
+    pu_y = uPivot[1] - sin_sw * dx + cos_sw * dy
 
     samp_m3_pu = samp_bilinear(uMask3, pu_x, pu_y, G)
     ua = samp_m3_pu[..., 0]
     ua0 = uMask3[..., 0]
 
-    br = 0.5 - 0.5 * math.cos(ph * 3.0 + 2.2)
+    br = 0.5 - 0.5 * shader_cos(ph * 3.0 + 2.2)
     br = float(ease(np.float32(br)))
     pm_x = px
     pm_y = py + 0.45 * br * uMask3[..., 1]
@@ -384,7 +411,7 @@ def render_rain_frame(manifest, textures, t):
         outl = np.where(umb_mask, outl * (1.0 - inf), outl)
 
     # lamp glow breathes
-    lb = 0.5 + 0.5 * math.sin(ph * 2.0 - 1.0)
+    lb = 0.5 + 0.5 * shader_sin(ph * 2.0 - 1.0)
     glow_factor = (glow * (0.06 + 0.10 * lb) * (1.0 - detail))[..., None]
     glow_col = np.array([1.0, 0.86, 0.58], dtype=np.float32)
     col = (1.0 - glow_factor) * col + glow_factor * glow_col
@@ -394,9 +421,9 @@ def render_rain_frame(manifest, textures, t):
     if np.any(wet_mask):
         qx = px * 0.16
         qy = py * 0.36
-        cos_ph, sin_ph = math.cos(ph), math.sin(ph)
-        cos_ph2_1, sin_ph2_1 = math.cos(ph * 2.0 + 1.0), math.sin(ph * 2.0 + 1.0)
-        cos_ph4, sin_ph4 = math.cos(ph * 4.0), math.sin(ph * 4.0)
+        cos_ph, sin_ph = shader_cos(ph), shader_sin(ph)
+        cos_ph2_1, sin_ph2_1 = shader_cos(ph * 2.0 + 1.0), shader_sin(ph * 2.0 + 1.0)
+        cos_ph4, sin_ph4 = shader_cos(ph * 4.0), shader_sin(ph * 4.0)
 
         n1 = noise(qx + 2.5 * cos_ph, qy + 2.5 * sin_ph)
         n2 = noise(qx * 1.9 + 7.3 + 1.6 * cos_ph2_1, qy * 1.9 + 7.3 + 1.6 * sin_ph2_1)
@@ -407,7 +434,7 @@ def render_rain_frame(manifest, textures, t):
         shimmer_fac = (wet * sp * 0.32)[..., None]
         col = np.where(wet_mask[..., None], (1.0 - shimmer_fac) * col + shimmer_fac * shimmer_col, col)
 
-        cos_ph2, sin_ph2 = math.cos(ph * 2.0), math.sin(ph * 2.0)
+        cos_ph2, sin_ph2 = shader_cos(ph * 2.0), shader_sin(ph * 2.0)
         wob = noise(py * 0.3 + 2.0 * cos_ph2, np.float32(1.7 + 2.0 * sin_ph2)) - 0.5
         col = np.where(wet_mask[..., None], col * (1.0 + (wet * glow * wob * 0.22)[..., None]), col)
 
@@ -434,7 +461,7 @@ def render_rain_frame(manifest, textures, t):
             if i < 13:
                 pi_idx = i
             else:
-                pi_idx = 13 + (i - 13) * 3 + int(math.floor((t - t0) / 3.0)) % 3
+                pi_idx = 13 + (i - 13) * 3 + int(math.floor((t - t0) / 3.0) % 4) % 3
             cen = uRip[pi_idx % len(uRip)]
             s = age / life
             r = 0.8 + rmax * (1.0 - (1.0 - s) ** 3)
@@ -517,7 +544,7 @@ def render_rain_frame(manifest, textures, t):
     spread = uSpread * (1.0 + (0.45 - 1.0) * detail) * (1.0 - outl)
 
     uPal = np.array(manifest['palette'], dtype=np.float32) / 255.0
-    uLab = oklab_vec(uPal)
+    uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
     return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "rain", r)
@@ -526,7 +553,7 @@ def render_rain_frame(manifest, textures, t):
 def render_laundry_frame(manifest, textures, t):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
-    ph = float(TAU * t / loop)
+    ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
 
     cx = np.arange(G, dtype=np.float32)[None, :]
     cy = np.arange(G, dtype=np.float32)[:, None]
@@ -592,9 +619,9 @@ def render_laundry_frame(manifest, textures, t):
     m2 = uMask2
     c_mask = (m2[..., 1] > 0.001) | (m2[..., 3] > 0.001) | (m2[..., 0] > 0.001)
     if np.any(c_mask):
-        br = float(ease(np.float32(0.5 - 0.5 * math.cos(ph * 4.0))))
+        br = float(ease(np.float32(0.5 - 0.5 * shader_cos(ph * 4.0))))
         et = (t - 7.4) % loop
-        ef = (math.sin(math.pi * et / 0.5) if et < 0.5 else 0.0) ** 2.0
+        ef = (shader_sin(math.pi * et / 0.5) if et < 0.5 else 0.0) ** 2.0
         qx = px + 0.25 * ef * m2[..., 3]
         qy = py + 0.38 * br * m2[..., 1] + 0.55 * ef * m2[..., 3]
         samp_m2 = samp_bilinear(uMask2, qx, qy, G)
@@ -620,7 +647,7 @@ def render_laundry_frame(manifest, textures, t):
     spread = uSpread * (1.0 + (0.45 - 1.0) * detail)
 
     uPal = np.array(manifest['palette'], dtype=np.float32) / 255.0
-    uLab = oklab_vec(uPal)
+    uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
     return dither_and_quantize(col, cov, 0.0, th, spread, uPal, uLab, uN, "laundry")
@@ -629,7 +656,7 @@ def render_laundry_frame(manifest, textures, t):
 def render_layers_frame(manifest, textures, t):
     G = int(manifest['grid'])
     loop = float(manifest['loop'])
-    ph = float(TAU * t / loop)
+    ph = np.float32(np.float32(TAU * np.float32(t)) / np.float32(loop))
 
     cx = np.arange(G, dtype=np.float32)[None, :]
     cy = np.arange(G, dtype=np.float32)[:, None]
@@ -665,13 +692,13 @@ def render_layers_frame(manifest, textures, t):
         b = breeze(s, ph, phs)
         g_samp = samp_bilinear(uSoft2, px, py, G)
         an = g_samp[..., 1] * TAU
-        cos_an, sin_an = np.cos(an), np.sin(an)
+        cos_an, sin_an = shader_cos(an), shader_sin(an)
 
         foliage = g_samp[..., 0] > 0.5
-        c4, s4 = math.cos(ph * 4.0), math.sin(ph * 4.0)
+        c4, s4 = shader_cos(ph * 4.0), shader_sin(ph * 4.0)
         # noise for foliage
-        flutter = 0.45 * (noise(px * 0.12 + 2.0 * np.cos(ph * 4.0 + phs),
-                                py * 0.12 + 2.0 * np.sin(ph * 4.0 + phs)) - 0.5)
+        flutter = 0.45 * (noise(px * 0.12 + 2.0 * shader_cos(ph * 4.0 + phs),
+                                py * 0.12 + 2.0 * shader_sin(ph * 4.0 + phs)) - 0.5)
         b_foliage = b + flutter
 
         dx_fol = A * w * b_foliage * cos_an
@@ -702,8 +729,8 @@ def render_layers_frame(manifest, textures, t):
         lp = lights[i]
         mode, k, amp, sway = lp['mode'], lp['k'], lp['amp'], lp['sway']
         col_light = np.array(lp['color'], dtype=np.float32)
-        q_light_x = px - sway * math.sin(ph * k + float(i))
-        q_light_y = py - sway * 0.3 * math.cos(ph * k + float(i))
+        q_light_x = px - sway * shader_sin(ph * k + float(i))
+        q_light_y = py - sway * 0.3 * shader_cos(ph * k + float(i))
         w = samp_bilinear(uLight, q_light_x, q_light_y, G)[..., i]
         light_active = w >= 0.002
         if np.any(light_active):
@@ -742,9 +769,9 @@ def render_layers_frame(manifest, textures, t):
     wave = manifest.get('wave', [0.0, 0.0])
     wet_mask = wet > 0.02
     if np.any(wet_mask):
-        cos_ph, sin_ph = math.cos(ph), math.sin(ph)
-        cos_ph2_1, sin_ph2_1 = math.cos(ph * 2.0 + 1.0), math.sin(ph * 2.0 + 1.0)
-        cos_ph4, sin_ph4 = math.cos(ph * 4.0), math.sin(ph * 4.0)
+        cos_ph, sin_ph = shader_cos(ph), shader_sin(ph)
+        cos_ph2_1, sin_ph2_1 = shader_cos(ph * 2.0 + 1.0), shader_sin(ph * 2.0 + 1.0)
+        cos_ph4, sin_ph4 = shader_cos(ph * 4.0), shader_sin(ph * 4.0)
 
         qx = px * 0.16
         qy = py * 0.36
@@ -805,8 +832,8 @@ def render_layers_frame(manifest, textures, t):
             lat = 16.0
             li = np.floor(px / lat).astype(np.float32)
             sway_amp = 4.0 if kind > 1.5 else 2.0
-            sway = sway_amp * np.sin(ph * 3.0 + hash1(li + float(i) * 7.0) * TAU)
-            v = py - (rep / loop) * t + hash1(li * 7.1 + float(i) * 7.0) * rep
+            sway = sway_amp * shader_sin(ph * 3.0 + hash1(li + float(i) * 7.0) * TAU)
+            v = py - (rep / loop) * t + hash1(li * np.float32(7.1) + np.float32(float(i) * 7.0)) * rep
             k = np.mod(np.floor(v / lat), rep / lat)
             h_dens = hash_xy(li + float(i) * 7.0 * 13.0, k)
             p_mask = h_dens <= dens
@@ -817,9 +844,9 @@ def render_layers_frame(manifest, textures, t):
             ey = np.mod(v, lat) - cen_y
             if kind > 1.5:
                 rot_a = ph * 6.0 + hash_xy(li, k) * TAU
-                cs, sn = np.cos(rot_a), np.sin(rot_a)
-                ex_rot = cs * ex - sn * ey
-                ey_rot = (sn * ex + cs * ey) * 2.2
+                cs, sn = shader_cos(rot_a), shader_sin(rot_a)
+                ex_rot = cs * ex + sn * ey
+                ey_rot = (-sn * ex + cs * ey) * 2.2
                 dist2 = ex_rot * ex_rot + ey_rot * ey_rot
             else:
                 dist2 = ex * ex + ey * ey
@@ -837,12 +864,12 @@ def render_layers_frame(manifest, textures, t):
                 h_cell = hash_xy(c_x + seed, c_y + seed)
                 cell_mask = h_cell <= dens
                 h = hash_xy(c_x * 1.3 + seed, c_y * 1.3 + seed) * TAU
-                cen_x = (c_x + 0.5) * lat + 5.0 * np.sin(ph + h) + 2.0 * np.sin(ph * 2.0 + h)
-                cen_y = (c_y + 0.5) * lat - 4.0 * np.cos(ph + h) + 1.5 * np.cos(ph * 3.0 + h * 2.0)
+                cen_x = (c_x + 0.5) * lat + 5.0 * shader_sin(ph + h) + 2.0 * shader_sin(ph * 2.0 + h)
+                cen_y = (c_y + 0.5) * lat - 4.0 * shader_cos(ph + h) + 1.5 * shader_cos(ph * 3.0 + h * 2.0)
                 ex = px - cen_x
                 ey = py - cen_y
                 dist2 = ex * ex + ey * ey
-                mo_val = np.exp(-dist2 / (2.0 * size * size)) * (0.5 + 0.5 * np.sin(ph * 3.0 + h))
+                mo_val = np.exp(-dist2 / (2.0 * size * size)) * (0.5 + 0.5 * shader_sin(ph * 3.0 + h))
                 a_p = np.maximum(a_p, np.where(cell_mask, mo_val, 0.0))
         else:
             # steam
@@ -859,13 +886,14 @@ def render_layers_frame(manifest, textures, t):
     spread = uSpread * (1.0 + (0.45 - 1.0) * detail)
 
     uPal = np.array(manifest['palette'], dtype=np.float32) / 255.0
-    uLab = oklab_vec(uPal)
+    uLab = oklab_vec(np.array(manifest["palette"], dtype=np.float64) / 255.0).astype(np.float32)
     uN = len(uPal)
 
     return dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, "layers")
 
 
 def render_frame(manifest, textures, t):
+    t = float(np.float32(float(t) % float(manifest['loop'])))
     profile = manifest['profile']
     if profile == 'rain':
         return render_rain_frame(manifest, textures, t)
@@ -887,192 +915,9 @@ def load_textures(scene_dir, manifest):
     return textures
 
 
-def get_ffmpeg_exe():
-    if os.environ.get('FFMPEG_PATH') and os.path.isfile(os.environ['FFMPEG_PATH']):
-        return os.environ['FFMPEG_PATH']
-    try:
-        import imageio_ffmpeg
-        exe = imageio_ffmpeg.get_ffmpeg_exe()
-        if exe and os.path.isfile(exe):
-            return exe
-    except Exception:
-        pass
-    exe = shutil.which('ffmpeg')
-    if exe:
-        return exe
-    return None
-
-
-def encode_frames(frames_dir, total_frames, fps, G, scale, out_mp4, out_gif=None):
-    ffmpeg_exe = get_ffmpeg_exe()
-    side = G * scale
-
-    if ffmpeg_exe:
-        # ffmpeg encoding
-        # frames are saved as raw RGBA or PNG. Let's pipe raw RGB frames or use image sequence
-        cmd = [
-            ffmpeg_exe, '-v', 'error', '-y',
-            '-r', str(fps),
-            '-i', os.path.join(frames_dir, 'frame_%05d.png'),
-            '-vf', f'scale=iw*{scale}:ih*{scale}:flags=neighbor',
-            '-c:v', 'libx264', '-preset', 'slow', '-crf', '12', '-tune', 'animation',
-            '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
-            out_mp4
-        ]
-        r = subprocess.run(cmd, capture_output=True, timeout=600)
-        if r.returncode != 0:
-            err = r.stderr.decode()
-            raise RuntimeError(f"FFmpeg encoding failed: {err}")
-        print(f"Wrote {out_mp4}")
-
-        if out_gif:
-            # Also create GIF if requested using palettegen
-            pal_cmd = [
-                ffmpeg_exe, '-v', 'error', '-y',
-                '-i', out_mp4,
-                '-vf', 'fps=20,palettegen=stats_mode=diff',
-                os.path.join(frames_dir, 'palette.png')
-            ]
-            subprocess.run(pal_cmd, capture_output=True, timeout=120)
-            gif_cmd = [
-                ffmpeg_exe, '-v', 'error', '-y',
-                '-i', out_mp4,
-                '-i', os.path.join(frames_dir, 'palette.png'),
-                '-lavfi', 'fps=20 [x]; [x][1:v] paletteuse=dither=none',
-                out_gif
-            ]
-            subprocess.run(gif_cmd, capture_output=True, timeout=120)
-            if os.path.exists(out_gif):
-                print(f"Wrote {out_gif}")
-        return True
-    else:
-        # Fallback to Pillow
-        sys.stderr.write("Warning: ffmpeg not found! Falling back to Pillow GIF + PNG frames.\n")
-        pil_frames = []
-        for i in range(total_frames):
-            p = os.path.join(frames_dir, f'frame_{i:05d}.png')
-            if not os.path.exists(p):
-                continue
-            im = Image.open(p)
-            if scale != 1:
-                im = im.resize((side, side), Image.NEAREST)
-            pil_frames.append(im)
-
-        if out_gif and len(pil_frames) > 0:
-            # 20 fps sample
-            step = max(1, fps // 20)
-            gif_frames = pil_frames[::step]
-            gif_frames[0].save(
-                out_gif,
-                save_all=True,
-                append_images=gif_frames[1:],
-                duration=int(1000 / (fps / step)),
-                loop=0
-            )
-            print(f"Wrote fallback GIF: {out_gif}")
-        return False
-
-
-def render_scene_cpu(scene_dir, frames_range=None, smoke=False, fps=60, scale=4, run_present=True):
-    manifest_path = os.path.join(scene_dir, 'build', 'manifest.json')
-    if not os.path.exists(manifest_path):
-        raise RuntimeError(f"Manifest not found: {manifest_path}. Run prep first.")
-
-    with open(manifest_path, 'r') as f:
-        manifest = json.load(f)
-
-    textures = load_textures(scene_dir, manifest)
-    loop = float(manifest['loop'])
-    G = int(manifest['grid'])
-
-    total_frames = int(round(loop * fps))
-    if smoke:
-        total_frames = min(10, total_frames)
-
-    if frames_range:
-        start_f, end_f = frames_range
-        start_f = max(0, start_f)
-        end_f = min(total_frames, end_f)
-    else:
-        start_f, end_f = 0, total_frames
-
-    frames_dir = os.path.join(scene_dir, 'build', 'frames')
-    os.makedirs(frames_dir, exist_ok=True)
-
-    out_dir = os.path.join(scene_dir, 'out')
-    os.makedirs(out_dir, exist_ok=True)
-    out_mp4 = os.path.join(out_dir, 'loop.mp4')
-    out_gif = os.path.join(out_dir, 'loop.gif')
-
-    scene_name = os.path.basename(os.path.normpath(scene_dir))
-    t0 = time.time()
-    rendered_count = 0
-
-    print(f"[{scene_name}] Rendering frames {start_f}..{end_f} of {total_frames} (G={G}, fps={fps}) on CPU...")
-    for i in range(start_f, end_f):
-        frame_file = os.path.join(frames_dir, f'frame_{i:05d}.png')
-        if os.path.exists(frame_file):
-            continue  # Resumable: skip existing frames
-
-        t = i / float(fps)
-        arr = render_frame(manifest, textures, t)
-        Image.fromarray(arr).save(frame_file)
-        rendered_count += 1
-
-        if (i - start_f) % 60 == 0 or i == end_f - 1:
-            elapsed = time.time() - t0
-            fps_speed = (rendered_count / elapsed) if elapsed > 0 else 0
-            print(f"[{scene_name}] Frame {i + 1}/{end_f} ({elapsed:.1f}s, {fps_speed:.1f} fps)")
-
-    elapsed = time.time() - t0
-    print(f"[{scene_name}] Done rendering {rendered_count} frames in {elapsed:.1f}s.")
-
-    # Check if all frames are rendered to synthesize final video
-    all_done = all(os.path.exists(os.path.join(frames_dir, f'frame_{i:05d}.png')) for i in range(total_frames))
-    if all_done and not smoke:
-        print(f"[{scene_name}] All {total_frames} frames complete. Encoding video...")
-        encode_frames(frames_dir, total_frames, fps, G, scale, out_mp4, out_gif)
-
-        if run_present:
-            present_script = os.path.join(os.path.dirname(__file__), 'pocketworld.py')
-            if os.path.exists(present_script):
-                print(f"[{scene_name}] Running present...")
-                r = subprocess.run([sys.executable, present_script, 'present', scene_dir], capture_output=True)
-                if r.returncode != 0:
-                    sys.stderr.write(r.stderr.decode() or "Present failed\n")
-                else:
-                    print(f"[{scene_name}] Present finished successfully.")
-    elif smoke:
-        print(f"[{scene_name}] Smoke test completed ({total_frames} frames generated).")
-    else:
-        print(f"[{scene_name}] Chunk finished: frames {start_f}..{end_f} rendered. Waiting for remaining chunks to encode.")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="CPU Renderer for pocketworld")
-    parser.add_argument("scene", help="Scene directory (e.g. examples/rain-bus-stop)")
-    parser.add_argument("--frames", help="Frame range to render as start:end (e.g. 0:360)")
-    parser.add_argument("--smoke", action="store_true", help="Render only a small number of frames for fast testing")
-    parser.add_argument("--fps", type=int, default=60, help="Frames per second (default: 60)")
-    parser.add_argument("--scale", type=int, default=4, help="Output scale factor (default: 4)")
-    parser.add_argument("--no-present", action="store_true", help="Skip running present post-processing")
-
-    args = parser.parse_args()
-
-    frames_range = None
-    if args.frames:
-        parts = args.frames.split(":")
-        frames_range = (int(parts[0]), int(parts[1]))
-
-    render_scene_cpu(
-        args.scene,
-        frames_range=frames_range,
-        smoke=args.smoke,
-        fps=args.fps,
-        scale=args.scale,
-        run_present=not args.no_present
-    )
-
 
 if __name__ == "__main__":
+    # Keep the standalone entry point, using exactly the same cache/encoder as the CLI.
+    from render_pipeline import main
+    sys.argv.insert(1, 'render')
     main()
