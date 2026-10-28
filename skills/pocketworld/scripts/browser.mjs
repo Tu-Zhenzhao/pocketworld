@@ -39,10 +39,11 @@ export async function readyPage(browser,{timeout=15000,attempts=3}={}) {
  throw Error(`browser-page: no ready document after ${attempts} attempts\n${errors.join('\n')}`);
 }
 
-export async function launchBrowser({ timeout = 5000, onStage = () => {} } = {}) {
+export async function launchBrowser({ timeout = 30000, onStage = () => {} } = {}) {
   const executablePath = chromePath(), attempts = [];
-  const variants = [[], ["--no-zygote"], ["--no-zygote", "--single-process"]];
-  for (let i = 0; i < variants.length; i++) {
+  // Retry the normal multiprocess launch; process-model flags can break GPU/FD ownership on Linux.
+  const launchAttempts = 3;
+  for (let i = 0; i < launchAttempts; i++) {
     const dir = await mkdtemp(path.join(os.tmpdir(), "pocketworld-chrome-"));
     let child, browser, closed = false, stderr = "";
     const kill = () => {
@@ -76,7 +77,7 @@ export async function launchBrowser({ timeout = 5000, onStage = () => {} } = {})
         "--disable-background-networking", "--disable-extensions",
         "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--no-sandbox",
         "--ignore-gpu-blocklist", "--disable-dev-shm-usage", "--disable-crash-reporter",
-        "--disable-breakpad", "--disable-crashpad-for-testing", ...variants[i],
+        "--disable-breakpad", "--disable-crashpad-for-testing",
         ...(process.env.CHROME_FLAGS || "").split(/\s+/).filter(Boolean), "about:blank"],
         { detached: process.platform !== "win32", stdio: ["ignore", "pipe", "pipe"] });
       child.stdout.on("data", () => {});

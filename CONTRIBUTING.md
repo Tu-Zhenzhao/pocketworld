@@ -14,7 +14,7 @@ npm run package:release
 node tools/check-package.mjs
 ```
 
-Playwright uses the detected Chrome; no Playwright browser download is necessary. `CHROME`, `FFMPEG_PATH`, `FFPROBE_PATH`, `PYTHON` and optional `PLAYWRIGHT_MODULE` are explicit test/runtime overrides. Test reports are retained at the printed temporary paths. CI runs Node20 and22 on Ubuntu.
+Playwright uses the detected Chrome; no Playwright browser download is necessary. `CHROME`, `FFMPEG_PATH`, `FFPROBE_PATH`, `PYTHON` and optional `PLAYWRIGHT_MODULE` are explicit test/runtime overrides. Test reports are retained at the printed temporary paths. CI runs Node20 and22 on Ubuntu24.04 with a managed Chrome for Testing build.
 
 Verify actual alpha and a white object, backward seeking, loop behavior, controls, responsive layout, component lifetime and two different scenes on one page. Check actual video/GIF metadata/playback and new-scene output. A clean installed Skill must work from outside this repository with its own `npm ci`.
 

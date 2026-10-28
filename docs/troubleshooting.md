@@ -7,6 +7,7 @@ Start with `node /path/to/pocketworld/scripts/doctor.mjs` (or `npm run doctor` i
 | Missing Node modules | Run the installed `scripts/setup.mjs --install-browser`; it uses the shipped lockfile |
 | Chrome not found | Run setup with `--install-browser`, or set `CHROME` to its executable path |
 | Invalid `CHROME` | Fix or unset it; an explicit override is authoritative |
+| System Chrome is unstable | Unset `CHROME`, then run `scripts/setup.mjs --install-browser --force-browser-download` to use managed Chrome for Testing |
 | Chrome exits on Linux | Install the browser's system libraries using the host's package manager; CI uses Ubuntu with Chrome for Testing. `ldd /path/to/chrome` can identify missing libraries |
 | Browser execution forbidden by the host | Keep source and diagnostics; report preview unverified. There is no native-scene CPU fallback |
 | Missing ffmpeg | Install ffmpeg or set `FFMPEG_PATH`; preview/component export does not require it |
