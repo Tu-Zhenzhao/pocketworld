@@ -1047,8 +1047,28 @@ def cmd_suggest(scene):
     print(f'pale cloth regions {len(cloth)}, wet guesses {len(wet_rings)}, key colours {len(keys)}')
 
 # ---------------------------------------------------------------- present
+def get_ffmpeg_path():
+    if os.environ.get('FFMPEG_PATH') and os.path.isfile(os.environ['FFMPEG_PATH']):
+        return os.environ['FFMPEG_PATH']
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.isfile(exe):
+            return exe
+    except Exception:
+        pass
+    import shutil
+    sys_ffmpeg = shutil.which('ffmpeg')
+    if sys_ffmpeg:
+        return sys_ffmpeg
+    return None
+
 def _ffmpeg(args):
-    r = subprocess.run(['ffmpeg', '-v', 'error', '-y', *args], capture_output=True)
+    exe = get_ffmpeg_path()
+    if not exe:
+        sys.stderr.write('ffmpeg not found (install imageio-ffmpeg or system ffmpeg)\n')
+        raise SystemExit(1)
+    r = subprocess.run([exe, '-v', 'error', '-y', *args], capture_output=True)
     if r.returncode != 0:
         sys.stderr.write(r.stderr.decode() or 'ffmpeg failed\n')
         raise SystemExit(r.returncode)
@@ -1057,8 +1077,11 @@ def _font_big(size=22):
     return _font(size)
 
 def metrics_of(mp4, grid):
+    exe = get_ffmpeg_path()
+    if not exe:
+        raise SystemExit('ffmpeg not found')
     raw = subprocess.check_output([
-        'ffmpeg', '-v', 'error', '-i', mp4,
+        exe, '-v', 'error', '-i', mp4,
         '-vf', f'scale={grid}:{grid}:flags=neighbor',
         '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-',
     ])
