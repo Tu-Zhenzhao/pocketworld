@@ -1,0 +1,3 @@
+import {MeshBuilder} from '../../engine/mesh.js';
+export const config={id:'my-world',title:'A quiet beginning',grid:240,loop:12,fps:60,camera:{azimuth:45,elevation:30,span:4.8,target:[0,.45,0]},light:[-.6,1,.8],palette:[[255,255,255],[81,101,71],[139,158,105],[196,208,155],[111,83,60],[184,151,103]],materials:[{colors:[1,2,3],dither:false},{colors:[4,5],dither:false}]};
+export default {config,state(time){return{time:((time%12)+12)%12}},geometry(s){const m=new MeshBuilder();m.disc([0,0,0],1.25,.95,0);m.tube([0,0,0],[0,.8,0],.07,.04,1);const sway=.02*Math.sin(s.time*Math.PI/3);m.ellipsoid([sway,1.05,0],[.43,.42,.36],0);return m.finish()}};

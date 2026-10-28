@@ -1,22 +1,27 @@
 {
   "name": "pocketworld",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
-  "description": "A reference painting, turned into a dithered living diorama by one WebGL2 shader.",
+  "description": "An agent skill: one sentence, one image, a living pixel world for videos and websites.",
   "bin": {
     "pocketworld": "cli/pocketworld.js"
   },
   "scripts": {
-    "dev": "node cli/pocketworld.js dev",
     "start": "node cli/pocketworld.js dev",
-    "prep": "node cli/pocketworld.js prep",
+    "dev": "node cli/pocketworld.js dev",
+    "demo": "node cli/pocketworld.js dev",
+    "doctor": "node cli/pocketworld.js doctor",
+    "setup": "node cli/pocketworld.js setup",
     "render": "node cli/pocketworld.js render",
-    "test": "node --test tests/cli.test.js",
-    "parity": "node cli/pocketworld.js parity"
+    "test": "node --test tests/*.test.js",
+    "test:native": "node tests/native-delivery.mjs",
+    "test:install": "node tests/install-smoke.mjs",
+    "package:release": "node tools/package.mjs"
   },
   "devDependencies": {
-    "puppeteer-core": "^24.15.0"
+    "puppeteer-core": "24.15.0",
+    "playwright": "1.62.1"
   },
   "license": "MIT",
   "engines": {

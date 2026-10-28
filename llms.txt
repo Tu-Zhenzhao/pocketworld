@@ -1,0 +1,11 @@
+# Pocketworld 0.4.0
+
+An agent skill for native pixel dioramas from a scene description and reference image.
+
+- Install first: https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
+- Skill: https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/skills/pocketworld/SKILL.md
+- Authoring: https://github.com/Tu-Zhenzhao/pocketworld/blob/main/docs/authoring.md
+- Embedding: https://github.com/Tu-Zhenzhao/pocketworld/blob/main/docs/embedding.md
+- Releases: https://github.com/Tu-Zhenzhao/pocketworld/releases/latest
+
+Install the full skills/pocketworld directory, including assets, references and scripts. Do not install only SKILL.md. Run setup, doctor and the shipped example. Read the Skill before creating a new scene. Runtime needs Node20+ and WebGL2 Chrome; video/GIF encoding needs ffmpeg. Scene authoring uses the calling agent's tools; the renderer is not an image reconstruction model.

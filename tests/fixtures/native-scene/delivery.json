@@ -1,0 +1,1 @@
+{"title":"透明与交付测试","caption":"验证用形状，不是美学样板。","focus":[{"id":"detail","label":"细看白色物体","rect":[6,12,24,24]}],"variants":[{"id":"moving","label":"运动","options":{}},{"id":"still","label":"静止","options":{"still":true}}]}

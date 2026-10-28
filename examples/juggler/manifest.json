@@ -1,0 +1,106 @@
+{
+  "createdAt": "2026-10-28T15:21:34.246Z",
+  "status": "generated",
+  "version": "0.4.0",
+  "componentTag": "pocketworld-juggler-8416974d",
+  "title": "Small acts, three balls",
+  "selectedVariant": "sprite",
+  "grid": 240,
+  "fps": 60,
+  "seconds": 12,
+  "alphaProbe": {
+    "empty": 50071,
+    "solid": 7529
+  },
+  "artifacts": {
+    "component": {
+      "file": "component.js",
+      "example": "embed.html",
+      "tagName": "pocketworld-juggler-8416974d",
+      "alpha": true
+    },
+    "video": {
+      "file": "loop.mp4",
+      "fps": 60,
+      "frames": 720,
+      "seconds": 12,
+      "width": 720,
+      "height": 720,
+      "alpha": false
+    },
+    "gif": {
+      "file": "loop.gif",
+      "fps": 20,
+      "seconds": 12,
+      "width": 720,
+      "height": 720,
+      "alpha": "binary"
+    }
+  },
+  "files": {
+    "README.txt": {
+      "bytes": 337,
+      "sha256": "3c2a200a8039ff0b524e865217e85682898d85604623643ba014266734272391"
+    },
+    "app.js": {
+      "bytes": 7184,
+      "sha256": "0c4cbeae349c932d4f56f43796d201bcbb1856b578e4ccc87fe4f71deb5ff917"
+    },
+    "component-module.js": {
+      "bytes": 3217,
+      "sha256": "d8f198377fe9b7481de26536395ab7fd7a8d02ea97b1e576f3e27750f4e10b5f"
+    },
+    "component.js": {
+      "bytes": 79502,
+      "sha256": "0d0149a43038d053503f90132343820e0fc9993ccf4d167f79c0950fa86651ca"
+    },
+    "embed.html": {
+      "bytes": 459,
+      "sha256": "80ae427ec3c188f6b1cb61d8aaa196b9015599ff5959ed79c734af8467b28311"
+    },
+    "engine/math.js": {
+      "bytes": 1172,
+      "sha256": "53dcc9e8d253c43be118dd9cbc3ddc558466968bd28fd90ad5a60f4ed9bfecc7"
+    },
+    "engine/mesh.js": {
+      "bytes": 2599,
+      "sha256": "ee9f44aac08a72e7a0d9b14f2dfa64b2bfee7f0f92b7a3c6e36c5c95354fad43"
+    },
+    "engine/pixels.js": {
+      "bytes": 1829,
+      "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
+    },
+    "engine/renderer.js": {
+      "bytes": 6164,
+      "sha256": "e265fa026926f7380d1145a056dc32889c87cc72f0a3d36d39c7182bd8975865"
+    },
+    "index.html": {
+      "bytes": 90064,
+      "sha256": "ff20ff511ab08d973c22a97d7528729d0f32bc114c5b34cb095d45773b8e5419"
+    },
+    "loop.gif": {
+      "bytes": 1985815,
+      "sha256": "e8bbcce93d3a1a5ab21bfd18297d9a93acf8e0dbcb09fbd98c2908f0481519b1"
+    },
+    "loop.mp4": {
+      "bytes": 382304,
+      "sha256": "79aeb6beac4fbd6430e952ef8d3a08bad0365f65bb1fef7ad61c658ee1ef2de2"
+    },
+    "poster.png": {
+      "bytes": 6916,
+      "sha256": "c31ebbed9cf4fb33f9f4fb2a8ace072f1d9e8c1297333aa8dabd14caeeec7f34"
+    },
+    "scenes/current/delivery.json": {
+      "bytes": 731,
+      "sha256": "21932bcb26c3e615b1dcde5d142ba9df11508b9ba4976837d86cf6728bddac4d"
+    },
+    "scenes/current/model.js": {
+      "bytes": 17067,
+      "sha256": "d3d965010bcfd490bab18238e866acba96b98823585466cc5bee6b596661fdf2"
+    },
+    "scenes/current/scene.js": {
+      "bytes": 1371,
+      "sha256": "8176134a3f9575ef13d3901d717b014fd56c0d6f06fb04c277bfba575396071b"
+    }
+  }
+}

@@ -1,0 +1,42 @@
+name: Native scenes and installation
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        node: ['20', '22']
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg libgbm1 libnss3 libxss1 libasound2t64
+      - run: npm ci
+      - run: node cli/pocketworld.js setup --install-browser
+      - name: Share detected browser with independent install tests
+        run: node --input-type=module -e "import {chromePath} from './skills/pocketworld/scripts/browser.mjs'; console.log('CHROME='+chromePath())" >> "$GITHUB_ENV"
+      - run: python -m pip install -r tests/requirements.txt
+      - run: npm test
+      - run: npm run test:native
+      - run: npm run test:install
+      - run: node tests/examples.mjs
+      - run: npm run package:release
+      - run: node tools/check-package.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pocketworld-${{ matrix.node }}
+          path: dist/

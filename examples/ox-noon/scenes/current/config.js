@@ -1,0 +1,21 @@
+export default {
+ id:'ox-noon-redesign',title:'牛背午梦',grid:240,loop:12,fps:60,
+ camera:{azimuth:45,elevation:34,span:5.55,target:[-.08,.69,0]},
+ cowYaw:18,headYaw:70,light:[-.6,1,.8],
+ palette:[[255,255,255],[112,129,89],[143,158,111],[174,184,137],[205,210,168],[227,226,192],[44,48,47],[66,73,71],[91,101,96],[119,131,120],[148,158,143],[53,61,58],[145,129,101],[181,155,112],[216,191,143],[237,216,171],[158,103,71],[200,143,99],[232,182,134],[185,190,167],[225,224,197],[248,242,216],[64,76,84],[99,120,127]],
+ materials:[
+  {name:'meadow',colors:[2,3,4,5],dither:false},
+  {name:'buffalo',colors:[6,7,8,9,10],dither:false},
+  {name:'muzzle',colors:[6,11,7,8,9],dither:false},
+  {name:'horn',colors:[12,13,14,15],dither:false},
+  {name:'hoof',colors:[6,11,7],dither:false},
+  {name:'skin',colors:[16,17,18],dither:false},
+  {name:'linen',colors:[19,20,21],dither:false},
+  {name:'indigo',colors:[22,23,19],dither:false},
+  {name:'straw',colors:[12,13,14,15],dither:false},
+  {name:'grass',colors:[1,2,3,4],dither:false},
+  {name:'flower',colors:[20,21,0],dither:false}
+ ],
+ field:{angle:18,radii:[2.32,1.34],tufts:100,shadow:{center:[-.05,.03],radii:[1.4,.63],strength:.27}},
+ motion:{chewPeriod:1.2,jawOpen:.025,jawAngle:.13,jawSide:.024,breathPeriod:4,bellyLift:.024,windPeriod:6,windAmplitude:.025}
+};

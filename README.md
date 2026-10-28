@@ -1,142 +1,88 @@
-# pocketworld
+<div align="center">
 
-A bus stop in the rain. It keeps raining.
+# Pocketworld
 
-![Rain at the bus stop](examples/rain-bus-stop/out/loop.gif)
+### One sentence. One image. A little world of your own.
 
-You bring a painting. pocketworld turns it into a little diorama of stacked pixels, then lets it breathe: rain, a lamp, a sheet on a line. One WebGL2 shader, a short palette, an ordered dither, sixty frames a second, the same twelve seconds forever.
+Give your agent a scene idea and a reference image. Let a tiny pixel world come to life.
 
-The feeling comes from [shawn (@zzzzshawn)](https://x.com/zzzzshawn) and his Small plays, which are also "just one webgl shader" and a dither. This repo does not include that code or those pictures.
+[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.4.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.4.0)
 
-[The loop as video](examples/rain-bus-stop/out/loop.mp4), if you would rather not watch a GIF.
+![A native pixel character juggling three balls beside a tree and bench](examples/juggler/loop.gif)
 
-![Reference, then the diorama](examples/rain-bus-stop/out/compare.png)
+*Actual Pocketworld output. Native pixel character, geometric scenery, three balls on one shared timeline.*
 
-## Laundry on the roof
+</div>
 
-The same recipe, a sunny scene. The sheets take the wind. The cat takes a breath. The woman stays where she was drawn.
+A quiet performer under a tree. A shepherd asleep on a buffalo. A rainy window, a garden corner, a whole small story you haven't thought of yet.
 
-![Rooftop laundry](examples/rooftop-laundry/out/loop.gif)
+**Pocketworld is a skill for your agent.** Start with a sentence, bring or generate a reference image, and let the agent design the shapes, light and motion for their final pixel grid. Watch the scene, pause it, replay it, look closer, then decide how to take it with you.
 
-[Video](examples/rooftop-laundry/out/loop.mp4). [Reference beside the frame](examples/rooftop-laundry/out/compare.png).
+## Give this link to your agent
 
-## Chess under the tree
+```text
+Install Pocketworld using:
+https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
 
-The generic `layers` profile: motion is a list of layers by physical category (soft deform, rigid rotate about a pivot, path, particles, surface waves, light). The leaves sway, a few fall, and the man fans himself: the fan is cut out and rotates about his grip, riding on a small forearm swing.
-
-![Chess under the tree](examples/chess-under-tree/out/loop.gif)
-
-[Video](examples/chess-under-tree/out/loop.mp4). [Reference beside the frame](examples/chess-under-tree/out/compare.png). [The fan at four phases](examples/chess-under-tree/out/fan_phases.png).
-
-## Campfire in the snow
-
-A winter campsite diorama. The campfire flames dance, warm amber light flickers across the snow and tent, the camper warms their hands, and the dog rests peacefully—its ear flicking occasionally using a rigid `duty` cycle.
-
-![Campfire in the snow](examples/snow-campfire/out/loop.gif)
-
-[Video](examples/snow-campfire/out/loop.mp4). [Reference beside the frame](examples/snow-campfire/out/compare.png). [The ear at four phases](examples/snow-campfire/out/dog_ear_phases.png).
-
-## Lake boat
-
-An elderly fisherman on a calm lake at twilight. The slender bamboo rod shivers with a light bite, the water ripples gently, a warm lantern glows from the bow, the fisherman breathes, and fireflies drift through the cool evening air.
-
-![Fisherman on the lake](examples/lake-boat/out/loop.gif)
-
-[Video](examples/lake-boat/out/loop.mp4). [Reference beside the frame](examples/lake-boat/out/compare.png). [The fishing rod at four phases](examples/lake-boat/out/fishing_rod_phases.png).
-
-## Thirty seconds
-
-```bash
-npm ci
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-export PYTHON="$PWD/.venv/bin/python"
-
-# Optional for browser exports and live previews: install Chrome/Chromium.
-# MP4 encoding uses imageio-ffmpeg's bundled binary; system ffmpeg is a fallback.
-node cli/pocketworld.js doctor
-
-# Generate an image-generation prompt or validate a reference image:
-node cli/pocketworld.js prompt "a quiet bus stop in the rain at dusk"
-node cli/pocketworld.js check-ref examples/rain-bus-stop
-
-# Build and render:
-node cli/pocketworld.js prep examples/rain-bus-stop
-node cli/pocketworld.js render examples/rain-bus-stop
-npm run dev
+Then create a pocket world: a person quietly juggling three balls
+under a tree, with a wooden bench nearby.
 ```
 
-The playground is `http://127.0.0.1:8787/playground/`. `render` writes a 60 fps MP4, a GIF, a side-by-side compare, contact sheets, motion phase strips, and smoothness metrics. Node >=20 and Python >=3.10 are recommended. The browser component still requires WebGL2; CPU export does not.
+The installation guide helps the agent choose its Skill directory, install the self-contained runtime, check the browser and run a real example. It works with agents that can read files and run terminal commands. An existing reference image makes an image-generation tool optional.
 
-## Personal agents and cloud sandboxes
+## A little world, wherever you want it
 
-Start with `doctor`. It checks Python modules, writable directories, browser launch, inline page loading, WebGL2/readPixels, a CPU frame and a short libx264 encode. `doctor --json` returns each stage, its original error and a suggestion, plus the backend this environment will select. A missing browser is reported but is not a fatal error when CPU rendering works.
+| Take it as… | Put it… |
+|---|---|
+| **A video** | In a post, a reel, a presentation or a story |
+| **A GIF** | In a README, a message or a playful corner of your page |
+| **A transparent web component** | Beside your writing, inside a portfolio, on a landing page or in a little garden of your own |
 
-```bash
-export PYTHON="$PWD/.venv/bin/python"
-node cli/pocketworld.js doctor --json
-node cli/pocketworld.js render examples/rain-bus-stop --smoke
-node cli/pocketworld.js render examples/rain-bus-stop --backend cpu
-
-# Half-open frame ranges, 0 through 719. The second run completes and encodes.
-node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 0:360
-node cli/pocketworld.js render examples/rain-bus-stop --backend cpu --frames 360:720
-```
-
-`--backend auto` is the default: probe Chrome and readPixels, then use CPU if the probe fails. `--backend browser` requires Chrome; `--backend cpu` never starts a browser or server. CPU rendering uses NumPy arrays and the same prepared textures as WebGL. Its numeric reference is the CLI's SwiftShader software WebGL renderer, including its sine/hash approximation. SwiftShader uses fused multiply-add on the tested ARM target and separate float32 operations on the tested x86 target; the CPU backend selects that math by architecture. `POCKETWORLD_SHADER_MATH=fused|separate` overrides it for a differently configured JIT build and is included in the cache fingerprint. Arbitrary hardware GPU drivers can have different rounding.
-
-Browser export defaults to `page.setContent()` with inline modules, manifest and PNG data URLs. It rejects all HTTP/file requests and starts no local server. `--server` retains the old localhost path for diagnosis. Configure executable paths and optional extra Chrome arguments with:
-
-```bash
-export CHROME="/path/to/chrome"
-export CHROME_FLAGS="--disable-dev-shm-usage"
-# Optional authoritative ffmpeg override; normally imageio-ffmpeg supplies it.
-export FFMPEG_PATH="/path/to/ffmpeg"
-```
-
-An explicit `CHROME` path is authoritative, so `CHROME=/nonexistent` reliably exercises CPU fallback. Chrome launch retries use fresh temporary profiles and bounded timeouts; flags cannot grant permissions forbidden by the host.
-
-`--smoke` captures ten frames without changing `out/`. Frame ranges also leave `out/` alone until all 720 frames are available. The cache under `build/frames/<input-hash>/` includes textures, source inputs, renderer code, backend and frame settings; changed inputs get a new cache. Corrupt PNGs are regenerated. `--force-prep` rebuilds inputs; ordinary rendering also detects changed scene/reference/prep code and newer input mtimes.
-
-A complete run stages its new artifacts before publishing, writes `out/render.json` with the input hash and artifact hashes, and records the latest attempt in `build/last-run.json`. A failed attempt exits nonzero and does not claim the old `out/` as new output. Do not infer success merely from an existing MP4. Do not run concurrent renders of the same scene.
-
-If neither bundled nor system ffmpeg is available, rendering still writes PNG frames, a Pillow GIF, compare/contact/phase images and frame-based metrics; it clearly reports `complete-gif-only` and does not leave an old MP4 labelled as current. `metrics.json.source` distinguishes decoded-video measurements from PNG measurements. GIFs run at 20 fps; MP4s remain 60 fps.
-
-## Renderer verification
-
-```bash
-node cli/pocketworld.js parity  # all five examples, six times across the loop
-node cli/pocketworld.js parity examples/rain-bus-stop --times 0,3
-node --test tests/cli.test.js
-"$PYTHON" -m unittest discover -s tests -v
-# Optional UI checks when Playwright is installed (or set PLAYWRIGHT_MODULE):
-node tests/browser-ui.mjs
-```
-
-Parity writes CPU/browser/difference PNGs and `parity.json` to `build/parity/` (or `--out <directory>`). The default limit is 0.02% differing cells per frame, including any RGB difference, with max and mean channel differences reported separately. Even a threshold-adjacent palette flip can have a large channel delta, so inspect the difference images too. CI checks rain and laundry and an extra fixture covering path, steam and the remaining light/particle modes. Tested dependency versions are in `requirements-test.txt`.
-
-`prompt` creates text for an external image model; it does not call a model or automatically trace scene masks.
+The live component keeps its own timeline, supports pause/replay/seek, respects reduced-motion preferences, and sleeps when it leaves the screen. Different worlds can live together on the same page.
 
 ```html
-<script type="module" src="/src/element.js"></script>
-<pocket-world src="examples/rain-bus-stop/build/manifest.json"></pocket-world>
+<div id="my-pocket" style="width:480px;max-width:100%"></div>
+<script type="module">
+  import { mount } from './component.js';
+  const world = mount(document.querySelector('#my-pocket'));
+  // world.pause(); world.play(); world.seek(2); world.replay();
+</script>
 ```
 
-## Make one
+Download a generated component and host it with your page. See [embedding](docs/embedding.md) for exact files, multiple scenes and CSP. JavaScript-capable pages can use the live component; other surfaces can use the GIF or video. MP4 is opaque; GIF uses binary transparency at 20fps; the web component preserves true alpha, including white objects.
 
-The workflow is [`skills/pocketworld/SKILL.md`](skills/pocketworld/SKILL.md). The short version:
+## Try a different small story
 
-0. **Reference image (loose on content, firm on style)**: Pocketworld animates layers from a reference painting. The reference must be an isometric small diorama island on a pure white background with wide margins, low saturation, no black outlines, and clearly separated moving parts (never random street photos or cluttered edge-to-edge scenes). Generating one with an image model is the recommended path:
-   ```bash
-   node cli/pocketworld.js prompt "<your scene idea in any language>"
-   node cli/pocketworld.js check-ref examples/your-scene/reference.jpg
-   ```
-   Full prompt templates and worked examples are in [`reference_prompt.md`](skills/pocketworld/reference_prompt.md).
-1. Save the keeper as `examples/your-scene/reference.jpg` and a `scene.json` beside it. Trace masks on the grid from `node cli/pocketworld.js overlay examples/your-scene`. `suggest` will guess key colours and pale cloth so you are not placing every point by hand.
-2. `prep`, look at the still, then `render`. The compare image and the metric tell you if it holds. The skill lists which knob fixes which problem: too painterly, too greasy, a washed-out fold, choppy time, motion that is too loud or too shy.
+> A tiny summer stall. The fan turns; a curtain catches the breeze.
 
-An earlier try drew the people out of math. They looked like math. That code is in [`experimental/sdf/`](experimental/sdf/) and it is not how these are made.
+> A buffalo chewing grass while a shepherd sleeps on its back, breathing slowly.
 
-## License
+> A little courtyard where someone practices a basketball shot, catches it, and tries again.
 
-MIT. Copyright (c) 2026 Zhenzhao Tu.
+Your scene can be a person, an animal, an object, a place or a small interaction. Give the agent a mood, a reference, and one action to care about. Make something for a page header, a loading state, a journal, a desktop corner—or a place we haven't imagined.
+
+## Built for the pixels
+
+- Shapes are designed at the target grid, with deliberate silhouettes and connected details.
+- Hands, props, shadows and responses follow shared scene state.
+- Art guidance covers people, animals, structures, plants, water and light.
+- The review player includes playback, scrubbing, detail crops and synchronized alternatives.
+
+The agent authors and refines the scene. Complex anatomy and choreography can take more iterations; this is not an automatic reconstruction service for arbitrary photographs.
+
+## Run the example yourself
+
+```sh
+git clone --depth 1 --branch v0.4.0 https://github.com/Tu-Zhenzhao/pocketworld.git
+cd pocketworld
+npm ci
+npm run demo
+```
+
+Open the printed local URL. The checked-in example plays directly in a WebGL2 browser. To create fresh exports, run `npm run setup -- --install-browser`, then follow [authoring](docs/authoring.md). Node20+ is required for tooling; ffmpeg is needed only for video/GIF encoding. No Python or model API key is required by the scene runtime.
+
+[Agent installation](INSTALL.md) · [Authoring](docs/authoring.md) · [Embedding](docs/embedding.md) · [Troubleshooting](docs/troubleshooting.md) · [Contributing & verification](CONTRIBUTING.md) · [Migration from 0.3](docs/migration.md)
+
+Inspired by the feeling of Shawn's small pixel worlds. The included code and example renders are our own; no artist footage or unpublished source is distributed.
+
+MIT · Zhenzhao Tu
