@@ -158,13 +158,16 @@ def dither_and_quantize(col, cov, fx, th, spread, uPal, uLab, uN, profile, r=Non
     K = (uN - 3) if profile == "rain" else (uN - 1)
     uLab_cand = uLab[:K]
 
-    # Weighted distance in OKLab space: (w*L - w*uLab)^2
-    # Dot product expansion: uLab_w^2 - 2 * L_w @ uLab_w.T
-    L_w = (L * CH_WEIGHT).reshape(-1, 3)
-    uLab_w = uLab_cand * CH_WEIGHT
-    uLab_norm2 = np.sum(uLab_w * uLab_w, axis=-1)
-    scores = uLab_norm2 - 2.0 * (L_w @ uLab_w.T)
-    best = np.argmin(scores, axis=-1).reshape(col.shape[:2])
+    # Match the shader's subtract / weighted squared distance, without the
+    # cancellation introduced by a dot-product distance expansion.
+    best = np.zeros(col.shape[:2], dtype=np.int32)
+    distance = np.full(col.shape[:2], np.inf, dtype=np.float32)
+    for i in range(K):
+        e = (L - uLab_cand[i]) * CH_WEIGHT
+        dd = fma(e[..., 2], e[..., 2], fma(e[..., 1], e[..., 1], e[..., 0] * e[..., 0]))
+        better = dd < distance
+        best[better] = i
+        distance[better] = dd[better]
 
     outc = uPal[best].copy()
 

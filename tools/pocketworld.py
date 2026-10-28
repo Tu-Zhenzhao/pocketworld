@@ -121,7 +121,8 @@ def load_cfg(scene):
     p = os.path.join(scene, 'scene.json')
     if not os.path.exists(p):
         raise SystemExit(f'missing {p}')
-    cfg = json.load(open(p))
+    with open(p) as f:
+        cfg = json.load(f)
     ref = cfg.get('reference', 'reference.jpg')
     if not os.path.isabs(ref):
         ref = os.path.join(scene, ref)
@@ -1048,7 +1049,9 @@ def cmd_suggest(scene):
 
 # ---------------------------------------------------------------- present
 def get_ffmpeg_path():
-    if os.environ.get('FFMPEG_PATH') and os.path.isfile(os.environ['FFMPEG_PATH']):
+    if os.environ.get('FFMPEG_PATH'):
+        if not os.path.isfile(os.environ['FFMPEG_PATH']):
+            raise RuntimeError(f"FFMPEG_PATH does not exist: {os.environ['FFMPEG_PATH']}")
         return os.environ['FFMPEG_PATH']
     try:
         import imageio_ffmpeg
@@ -1068,7 +1071,7 @@ def _ffmpeg(args):
     if not exe:
         sys.stderr.write('ffmpeg not found (install imageio-ffmpeg or system ffmpeg)\n')
         raise SystemExit(1)
-    r = subprocess.run([exe, '-v', 'error', '-y', *args], capture_output=True)
+    r = subprocess.run([exe, '-v', 'error', '-y', *args], capture_output=True, timeout=600)
     if r.returncode != 0:
         sys.stderr.write(r.stderr.decode() or 'ffmpeg failed\n')
         raise SystemExit(r.returncode)
@@ -1084,7 +1087,7 @@ def metrics_of(mp4, grid):
         exe, '-v', 'error', '-i', mp4,
         '-vf', f'scale={grid}:{grid}:flags=neighbor',
         '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-',
-    ])
+    ], timeout=120)
     fr = np.frombuffer(raw, np.uint8).reshape(-1, grid, grid, 3)
     if len(fr) < 2:
         raise SystemExit('mp4 decoded to fewer than 2 frames')
