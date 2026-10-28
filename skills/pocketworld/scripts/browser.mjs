@@ -28,6 +28,17 @@ export function chromePath() {
   return found;
 }
 
+// A CDP target can close during initialization before Puppeteer has a main frame.
+// Verify a usable document instead of returning that half-initialized page.
+export async function readyPage(browser,{timeout=15000,attempts=3}={}) {
+ const errors=[];
+ for(let i=0;i<attempts;i++){
+  let page;try{page=await deadline(browser.newPage(),timeout,'page creation');await deadline(page.goto('about:blank',{waitUntil:'load',timeout}),timeout,'page initialization');await deadline(page.evaluate(()=>document.readyState),timeout,'page document');return page}
+  catch(error){errors.push(error.message);if(page)await deadline(page.close(),1000,'failed page cleanup').catch(()=>{});if(!browser.isConnected()||!/main frame too early|Target closed|Session closed|Connection closed|timed out|timeout|closed page/i.test(error.message))throw error}
+ }
+ throw Error(`browser-page: no ready document after ${attempts} attempts\n${errors.join('\n')}`);
+}
+
 export async function launchBrowser({ timeout = 5000, onStage = () => {} } = {}) {
   const executablePath = chromePath(), attempts = [];
   const variants = [[], ["--no-zygote"], ["--no-zygote", "--single-process"]];
@@ -79,8 +90,9 @@ export async function launchBrowser({ timeout = 5000, onStage = () => {} } = {})
         child.once("exit", (code, signal) => reject(new Error(`Chrome exited ${code ?? signal}`)));
       }), timeout, "Chrome startup");
       browser = await deadline(puppeteer.connect({ browserWSEndpoint: endpoint, protocolTimeout: timeout }), timeout, "Chrome CDP connection");
+      const probe=await readyPage(browser,{timeout,attempts:2});await probe.close();
       onStage("browser-launch", { executablePath, attempt: i + 1, attempts });
-      return { browser, close, attempts };
+      return { browser, close, attempts, newPage:()=>readyPage(browser,{timeout}) };
     } catch (error) {
       await close();
       attempts.push({ attempt: i + 1, error: `${error.message}\n${stderr}`.trim() });

@@ -37,7 +37,7 @@ export async function deliver(sceneDir,out,formats,{variant}={}){
   await copyModules(sceneDir,path.join(out,'scenes/current'),out);await fs.cp(path.join(assets,'native-starter/engine'),path.join(out,'engine'),{recursive:true});
   // Inspect the scene in the browser; its module can depend on browser globals.
   const sceneURL=await bundle(path.join(out,'scenes/current/scene.js'));
-  handle=await launchBrowser({timeout:15000});const page=await handle.browser.newPage();page.setDefaultTimeout(20000);
+  handle=await launchBrowser({timeout:15000});const page=await handle.newPage();page.setDefaultTimeout(20000);
   await page.setContent('<meta charset="utf-8">');const config=await page.evaluate(async url=>(await import(url)).default.config,sceneURL);
   let meta={};try{meta=JSON.parse(await fs.readFile(path.join(sceneDir,'delivery.json'),'utf8'))}catch(error){if(error.code!=='ENOENT')throw error}
   const data=validateDelivery(meta,config);if(variant){const selected=data.variants.find(v=>v.id===variant);if(!selected)throw Error(`Unknown variant: ${variant}`);data.variants=[selected,...data.variants.filter(v=>v!==selected)]}const grid=config.grid,fps=config.fps,count=config.loop*fps;data.componentTag=`pocketworld-${config.id}-${createHash('sha256').update(sceneURL+JSON.stringify(data.variants[0].options)).digest('hex').slice(0,8)}`;
