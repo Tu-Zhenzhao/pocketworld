@@ -1,21 +1,11 @@
 node_modules/
-tmp/
-frames/
-*.log
 .DS_Store
-.shader-debug.frag
+*.log
 __pycache__/
 *.pyc
-.pytest_cache/
-overlay.png
-suggest.png
-suggest.json
-# Local render caches and run diagnostics (approved example artifacts stay tracked).
-**/build/prep-state.json
-**/build/render-state.json
-**/build/last-run.json
-**/build/parity/
-**/out/render.json
-.pocketworld-out-*/
-.doctor-*/
 .venv/
+tmp/
+dist/
+.preview/
+**/scripts/browser.json
+**/.frames/

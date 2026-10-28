@@ -1,0 +1,36 @@
+{
+  "title": "Dreaming on a buffalo",
+  "caption": "The buffalo chews. The dream breathes.",
+  "technical": "Authored native geometry and pixel accents: hinged jaw with held grass, continuous breathing torso and rooted wind. The reference image guides design; its pixels are absent from the rendered scene.",
+  "focus": [
+    {
+      "id": "chew",
+      "label": "Chewing",
+      "rect": [
+        36,
+        76,
+        86,
+        86
+      ]
+    },
+    {
+      "id": "breath",
+      "label": "The sleeping shepherd",
+      "rect": [
+        84,
+        53,
+        86,
+        86
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "id": "redesign",
+      "label": "Meadow dream",
+      "options": {}
+    }
+  ],
+  "artifacts": {},
+  "language": "en"
+}

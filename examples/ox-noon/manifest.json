@@ -1,0 +1,81 @@
+{
+  "createdAt": "2026-10-28T15:21:38.424Z",
+  "status": "generated",
+  "version": "0.4.0",
+  "componentTag": "pocketworld-ox-noon-redesign-a18982f3",
+  "title": "Dreaming on a buffalo",
+  "selectedVariant": "redesign",
+  "grid": 240,
+  "fps": 60,
+  "seconds": 12,
+  "alphaProbe": {
+    "empty": 46123,
+    "solid": 11477
+  },
+  "artifacts": {
+    "component": {
+      "file": "component.js",
+      "example": "embed.html",
+      "tagName": "pocketworld-ox-noon-redesign-a18982f3",
+      "alpha": true
+    }
+  },
+  "files": {
+    "README.txt": {
+      "bytes": 325,
+      "sha256": "83fd70c418cb54e4814d6646397bba3f82e7613768cb8e6ed5a8f6f9383e63fb"
+    },
+    "app.js": {
+      "bytes": 7184,
+      "sha256": "0c4cbeae349c932d4f56f43796d201bcbb1856b578e4ccc87fe4f71deb5ff917"
+    },
+    "component-module.js": {
+      "bytes": 3225,
+      "sha256": "d3e47eff03531894c410a90c304d030b7306c617b97ebb124166196b81d95b1e"
+    },
+    "component.js": {
+      "bytes": 64166,
+      "sha256": "11aeae75351d6bfaa866741c404456ba6e52067477907ac88872d5115e144012"
+    },
+    "embed.html": {
+      "bytes": 495,
+      "sha256": "178795eca580614d733000562d9f7365b5409fb9d67264b2e875f90db29ffec5"
+    },
+    "engine/math.js": {
+      "bytes": 1172,
+      "sha256": "53dcc9e8d253c43be118dd9cbc3ddc558466968bd28fd90ad5a60f4ed9bfecc7"
+    },
+    "engine/mesh.js": {
+      "bytes": 2599,
+      "sha256": "ee9f44aac08a72e7a0d9b14f2dfa64b2bfee7f0f92b7a3c6e36c5c95354fad43"
+    },
+    "engine/pixels.js": {
+      "bytes": 1829,
+      "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
+    },
+    "engine/renderer.js": {
+      "bytes": 6164,
+      "sha256": "e265fa026926f7380d1145a056dc32889c87cc72f0a3d36d39c7182bd8975865"
+    },
+    "index.html": {
+      "bytes": 74520,
+      "sha256": "4048d8a1fd336cc7c1951278a4420544280794eabf7a72e833138571e726ccd1"
+    },
+    "poster.png": {
+      "bytes": 9326,
+      "sha256": "f1aa09de276ac259cb92cacdda9965701cd0a31a1f8a0c83929e69dcaf9c56cb"
+    },
+    "scenes/current/config.js": {
+      "bytes": 1316,
+      "sha256": "9d5547731adfe773bb27b196fec237af568a4731146e0cf202388e30f140b787"
+    },
+    "scenes/current/delivery.json": {
+      "bytes": 750,
+      "sha256": "42c9dd3282b44dc07483b25675a3b067ee78f7534ab4e76711eca53be4ae0697"
+    },
+    "scenes/current/scene.js": {
+      "bytes": 12362,
+      "sha256": "81f4f7f2ce7a4de1ebe829ab19455552b5a2ca9830c6018fdbcdc15749b30923"
+    }
+  }
+}

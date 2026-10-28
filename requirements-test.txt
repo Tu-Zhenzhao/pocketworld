@@ -1,4 +1,0 @@
-# Versions used for v0.3.0 parity and clean-snapshot acceptance (Python 3.12).
-numpy==2.5.4
-pillow==13.0.0
-imageio-ffmpeg==0.6.0

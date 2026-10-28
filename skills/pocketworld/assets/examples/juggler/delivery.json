@@ -1,0 +1,32 @@
+{
+  "title": "Small acts, three balls",
+  "caption": "A little balance. A little breeze.",
+  "technical": "Native pixel character with geometric scenery. Hands and balls share one catch-and-release timeline; shadows follow the same ball positions. The second variant uses geometric character volumes.",
+  "focus": [
+    {
+      "id": "hands",
+      "label": "Hands & catches",
+      "rect": [
+        86,
+        68,
+        80,
+        80
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "id": "sprite",
+      "label": "Native pixel character",
+      "options": {}
+    },
+    {
+      "id": "volume",
+      "label": "Geometric character",
+      "options": {
+        "representation": "volume"
+      }
+    }
+  ],
+  "language": "en"
+}

@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-10-28
+
+### Added
+
+- Native pixel authoring with geometry, designed pixel characters and shared action state; subject-specific art guidance and visual anchors.
+- The three-ball juggler as the main runnable GIF/video/component example, plus a newly designed buffalo-and-shepherd scene and a minimal starter.
+- A portable Skill installer with dependency lockfiles, browser setup, doctor, real smoke-test instructions and backed-up updates.
+- A reusable review player with detail crops, synchronized alternatives, honest format selection and explicit variant export.
+- True-alpha components preserving white objects, deterministic independent tags for multiple worlds on one page, lifecycle cleanup and a simple `mount` API.
+- Clean installation, actual encoded media, component and cross-scene regression checks; release archives with hashes.
+
+### Changed
+
+- README now leads with the scene, the single agent installation link and ways to share or embed a world; Chinese README and focused agent/developer documentation accompany it.
+- New scene rendering requires Chrome/WebGL2; video/GIF encoding uses ffmpeg. Python is no longer a runtime dependency.
+
+### Removed
+
+- The v0.3 raster conversion/CPU pipeline, old cutout instructions, old raster examples and archived generic SDF experiments from the current package. The previous commit remains linked in the migration guide.
+
 ## [0.3.0] - 2026-10-28
 
 ### Added
