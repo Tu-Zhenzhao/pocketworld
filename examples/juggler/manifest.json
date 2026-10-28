@@ -47,12 +47,12 @@
       "sha256": "0c4cbeae349c932d4f56f43796d201bcbb1856b578e4ccc87fe4f71deb5ff917"
     },
     "component-module.js": {
-      "bytes": 3217,
-      "sha256": "d8f198377fe9b7481de26536395ab7fd7a8d02ea97b1e576f3e27750f4e10b5f"
+      "bytes": 3216,
+      "sha256": "f8d4840f07ffe73f5fd0373491ffb80351c7f7f2ea36c385ff6b01d1af41990e"
     },
     "component.js": {
-      "bytes": 79502,
-      "sha256": "0d0149a43038d053503f90132343820e0fc9993ccf4d167f79c0950fa86651ca"
+      "bytes": 79498,
+      "sha256": "652b97ca7228c059df7cacf0bf9e41a70f14d45165c65c4a5a9f55e4e6a38f52"
     },
     "embed.html": {
       "bytes": 459,

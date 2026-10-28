@@ -72,7 +72,7 @@ export async function deliver(sceneDir,out,formats,{variant}={}){
   const manifest={createdAt:new Date().toISOString(),status:'generated',version:'0.4.0',componentTag:data.componentTag,title:data.title,selectedVariant:data.variants[0].id,grid,fps,seconds:config.loop,alphaProbe:alpha,artifacts:data.artifacts,files};await fs.writeFile(path.join(out,'manifest.json'),JSON.stringify(manifest,null,2));console.log(JSON.stringify({out,artifacts:data.artifacts,alpha}));return manifest;
  }catch(error){await fs.writeFile(path.join(out,'failure.json'),JSON.stringify({status:'failed',message:error.message}));throw error}finally{await handle?.close()}
 }
-if(process.argv[1]&&(await fs.realpath(process.argv[1]))===(await fs.realpath(fileURLToPath(import.meta.url)))){
+if(process.argv[1]&&(await fs.realpath(process.argv[1]).catch(()=>null))===(await fs.realpath(fileURLToPath(import.meta.url)))){
  const args=process.argv.slice(2),source=args.shift(),outIndex=args.indexOf('--out'),formatIndex=args.indexOf('--formats');
  if(!source||outIndex<0||!args[outIndex+1]){console.error('Usage: node deliver.mjs <scene-folder> --out <fresh-output-directory> --formats preview|video,gif,component');process.exitCode=1}
  else try{await deliver(source,args[outIndex+1],(formatIndex<0?'preview':args[formatIndex+1]||'preview').split(','),{variant:args.includes('--variant')?args[args.indexOf('--variant')+1]:undefined})}catch(error){console.error(error.message);process.exitCode=1}

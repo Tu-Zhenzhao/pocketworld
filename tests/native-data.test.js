@@ -12,3 +12,5 @@ test('does not trust source metadata to claim generated downloads',()=>{
 });
 
 test('rejects scene ids that cannot safely name a component',()=>{assert.throws(()=>validateDelivery({}, {...config,id:'Not a safe id'}),/slug/)});
+
+test('delivery helpers can be imported from a stdin-driven agent script',async()=>{const {spawnSync}=await import('node:child_process');const url=new URL('../skills/pocketworld/scripts/deliver.mjs',import.meta.url).href;const result=spawnSync(process.execPath,['--input-type=module','-'],{input:`const m=await import(${JSON.stringify(url)});console.log(typeof m.bundle);`,encoding:'utf8'});assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'function')});
