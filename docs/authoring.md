@@ -4,7 +4,7 @@ An agent starts with your scene description and a supplied or generated referenc
 
 ## Fast path
 
-Read the [Skill](../skills/pocketworld/SKILL.md), [art direction](../skills/pocketworld/references/art-direction.md) and relevant [subject recipes](../skills/pocketworld/references/drawing-recipes.md). Use the installed Skill's `assets/native-starter/scene/` for a fresh scene, or learn the adapter from `assets/examples/juggler/` and `ox-noon/`.
+For a sentence-only request, the agent can first make a design reference with its image tool; supplied images go directly into that design stage. See [reference design](../skills/pocketworld/references/reference-design.md). Read the [Skill](../skills/pocketworld/SKILL.md), [art direction](../skills/pocketworld/references/art-direction.md) and relevant [subject recipes](../skills/pocketworld/references/drawing-recipes.md). Use the installed Skill's `assets/native-starter/scene/` for a fresh scene, or learn the adapter from `assets/examples/juggler/` and `ox-noon/`.
 
 In a repository checkout:
 

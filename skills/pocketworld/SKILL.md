@@ -12,7 +12,7 @@ Author a little world at its final pixel grid. The image guides composition, pal
 Treat the directory containing this file as `SKILL_ROOT`. Everything needed by the Skill is inside it. Use its actual absolute path in commands, including paths with spaces.
 
 1. If needed, run `node SKILL_ROOT/scripts/setup.mjs --install-browser`, then `node SKILL_ROOT/scripts/doctor.mjs`. Node20+ and browser WebGL2 are required; video/GIF additionally need ffmpeg. Reference generation uses the host agent's image tool, not a bundled model/API service.
-2. Read [art direction](references/art-direction.md), relevant [drawing recipes](references/drawing-recipes.md), and [native authoring](references/native-authoring.md).
+2. For sentence-only input, make a design reference with the host image tool when available; use a supplied image when present. Read [reference design](references/reference-design.md), [art direction](references/art-direction.md), relevant [drawing recipes](references/drawing-recipes.md), and [native authoring](references/native-authoring.md).
 3. Copy `assets/native-starter/scene/` into a fresh workspace scene folder. The shipped `assets/examples/juggler/` and `ox-noon/` are runnable guidance for two different subjects/rendering approaches; make a new design for a new prompt.
 4. Build a review: `node SKILL_ROOT/scripts/deliver.mjs /absolute/scene --out /absolute/fresh-review --formats preview`. Serve it with `node SKILL_ROOT/scripts/serve.mjs /absolute/fresh-review`.
 5. Read [delivery](references/delivery.md), retain the player and let the user choose final formats. Existing choices persist. Publish only when authorized.
