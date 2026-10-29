@@ -6,7 +6,7 @@
 
 把一个小念头交给你的 Agent，让它在像素里生活起来。
 
-[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.5.1](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.1)
+[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.6.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.6.0)
 
 ![树下抛三个球的原生像素角色](examples/juggler/loop.gif)
 
@@ -67,7 +67,7 @@ Pocketworld 按目标网格设计轮廓、色块和细线；让手与道具、�
 ## 自己运行示例
 
 ```sh
-git clone --depth 1 --branch v0.5.1 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.6.0 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo
@@ -84,3 +84,11 @@ MIT · Zhenzhao Tu
 ## 0.5：受限环境也能制作原生世界
 
 新增原生 CPU 导出：直接绘制场景几何与像素形状，保留现有美术与交付 UI。受限宿主使用 `--backend cpu`，不启动 Chrome；`auto` 支持浏览器失败后转 CPU。标准几何、抛球和牛背示例均支持。自定义 WebGL 需要适配器，详见[运行能力](skills/pocketworld/references/runtime.md)。生成参考图前先查看极简风格锚点，用户自由描述场景，视觉语言保持克制与留白。
+
+## 0.6：用更少的格子，把故事讲清楚
+
+先决定轮廓、间隙、支撑和动作，再选择头、手、道具的格数，最后确定画布。[美术教学对照](skills/pocketworld/references/art-studies.md)包含过细／概括得当／过粗的同场景对比、真实中间稿，以及动作中断颈的修正案例。新的原生像素模板和无需浏览器的细看工具，让 agent 先看清自己的造型，再继续动画和润色。
+
+![池畔陶艺：原生造型与连续动作](examples/pottery/loop.gif)
+
+云端 agent 能在自己的执行环境用 CPU 绘制、导出并发送图片、视频、GIF 和交付包，不要求云电脑的 localhost 能被用户打开。本地使用时仍然保留完整播放器、重播、时间轴、细看和透明组件。陶艺、抛球和牛背示例都可运行；复杂造型仍需要实际视觉判断。

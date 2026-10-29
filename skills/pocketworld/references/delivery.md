@@ -2,6 +2,8 @@
 
 Reuse `assets/delivery/`. Customize story, language, crops and actual alternatives while retaining the white stage and quiet presentation.
 
+Keep this UI for local users. Cloud agents may render perfectly while their browser/user cannot reach workspace localhost: attach the fresh native preview, chosen MP4/GIF and downloadable review/component source package. Report interactive access as unverified there; do not block CPU export, remove local controls, promise a public URL, or repeatedly retry an inaccessible server. When the review is on a user's machine, serve it with `scripts/serve.mjs` and actually verify its controls. A cloud browser's inaccessible localhost does not imply that exported components cannot work on the user's website.
+
 ## Player
 
 - Play/pause, replay, visible time scrub and named crops from the same native frame, integer enlarged.

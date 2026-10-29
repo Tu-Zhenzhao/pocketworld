@@ -1,0 +1,12 @@
+{
+  "ownership": "All lesson code and rendered images are authored for Pocketworld; no third-party artist footage or unpublished source is bundled.",
+  "pottery": {
+    "origin": "The user's Dot authored the 0.5.1 prototype; maintained here as canonical source with a native-cell neck continuity repair.",
+    "userFeedback": "Overall direction approved; user identified a neck gap at water contact. Corrected source and before/after counterexample are provided.",
+    "stages": "silhouette/ and planes/ preserve actual authored intermediate sources, not poster filters.",
+    "fine": "Owned prior 288-cell Canvas scene; diagnostic counterexample, not production fallback.",
+    "overCoarse": "Deliberately loses essential wrist/rim/identity information; negative teaching example only."
+  },
+  "transfer": "New authored human/prop, animal and hard-surface exercises. Not independently user-approved anchors or a guarantee of agent generalization.",
+  "rendering": "Plates are generated from source with native CPU and exact integer enlargement; tools/build-art-studies.mjs regenerates them."
+}

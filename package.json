@@ -1,6 +1,6 @@
 {
   "name": "pocketworld",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "An agent skill: one sentence, one image, a living pixel world for videos and websites.",
@@ -18,7 +18,9 @@
     "test:cpu": "node tests/cpu.mjs",
     "test:native": "node tests/native-delivery.mjs",
     "test:install": "node tests/install-smoke.mjs",
-    "package:release": "node tools/package.mjs"
+    "package:release": "node tools/package.mjs",
+    "test:art": "node tests/art.mjs",
+    "studies": "node tools/build-art-studies.mjs"
   },
   "devDependencies": {
     "@napi-rs/canvas": "1.0.13",

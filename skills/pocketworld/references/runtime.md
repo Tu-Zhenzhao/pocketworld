@@ -5,7 +5,7 @@ Rendering style and execution backend are separate. CPU draws authored native sh
 | Capability | Native CPU (`--backend cpu`) | Browser (`--backend browser`) |
 |---|---|---|
 | Standard geometry, material ramps, depth, field and pixel details | Supported | Supported with WebGL2 |
-| Shipped juggler sprite/volume and ox | Supported | Supported |
+| Shipped juggler sprite/volume, ox and pottery | Supported | Supported |
 | Custom Canvas2D `createRenderer` | Supported when using the documented canvas-only host | Supported |
 | Arbitrary custom GLSL, DOM, external textures | Requires an explicit CPU adapter; unsupported must be reported | Depends on that custom implementation |
 | Poster, MP4, GIF, component source | Supported; video/GIF need ffmpeg | Supported; video/GIF need ffmpeg |
@@ -26,3 +26,5 @@ The same state, meshes, cell grid and palette drive both geometry paths. CPU imp
 For custom renderers, `createRenderer(canvas, {backend})` must return the normal drawing/capture/lifecycle interface. CPU provides Canvas2D, `document.createElement('canvas')` and `ImageData`; it does not emulate a DOM, WebGL or a general browser. Use `SoftwareRenderer` or `TriangleRaster` from `engine/software.js` for custom native geometry. Avoid module-global DOM work and Node-only imports so browser components remain portable.
 
 A CPU poster/video is verifiable inside the agent workspace even if the agent browser cannot access its localhost. That does not prove interactive UI access or browser video playback: distinguish frame generation, encoding, download accessibility, interactive playback and visual approval. Provide fresh outputs and diagnostics, and report unverified checks accurately.
+
+Use `scripts/study.mjs` to inspect native PNGs, integer crops, extremes and adjacent times entirely in the CPU workspace. `study.html` and the full review remain available for local users; cloud delivery attaches actual images/media plus the package. The user's machine and the agent's cloud machine do not share `127.0.0.1`. These helpers render locally within the cloud process; they do not deploy or require a remotely reachable service. Video/GIF still require ffmpeg, and unsupported custom GLSL still needs an adapter.

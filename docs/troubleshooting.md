@@ -12,6 +12,9 @@ Start with `node /path/to/pocketworld/scripts/doctor.mjs` (or `npm run doctor` i
 | Browser execution forbidden by the host | Use `--backend cpu`: standard geometry, shipped examples and canvas-only custom renderers work without Chrome. Keep browser checks unverified; do not change host security policy |
 | Missing ffmpeg | Install ffmpeg or set `FFMPEG_PATH`; preview/component export does not require it |
 | Output directory already exists | Choose a fresh output directory; existing results are protected |
+| Cloud preview URL cannot be reached | Inspect native PNGs and send fresh media/review files. Keep the UI for local viewing; cloud and user localhost are different. CPU render/study do not need a reachable server |
+| Custom scene exports a poster but player fails on palette | Supply actual `config.palette` as RGB byte triples or #RRGGBB strings; 0.6 validates this dependency before reporting successful delivery |
+| A neck/wrist/rim breaks only during motion | Inspect native extreme and adjacent frames, including occlusion. The pottery study shows how overlapping coverage fixes a polygon pinch; coordinates alone do not establish a connected silhouette |
 | Component blocked by CSP | Use `component-module.js` with its `engine/` and `scenes/` directories; permit the resulting script paths |
 | Component missing in a blog platform | Check whether that platform strips scripts/custom elements. Use GIF/video where scripts are unavailable |
 | White clothes disappear | Rebuild with true alpha; never remove the background by color-keying white |

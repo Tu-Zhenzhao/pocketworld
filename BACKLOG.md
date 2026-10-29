@@ -1,5 +1,9 @@
 # Backlog
 
+## Implemented in 0.6.0 — authored-cell teaching and inspection
+
+User approved the coarse pottery demonstration and requested correction of its neck at water contact, then authorized publication. Implemented the structural overlap fix, full-loop native connectivity regression with a real failing counterexample, annotated source-backed art lessons, feature-budget-first workflow, direct-cell starter, browser-free study helper and early palette validation. Retained cloud CPU media/package delivery and the complete local review UI. Generalization/art quality remain subject to actual scene review; no universal grid or numeric beauty score is claimed.
+
 ## Implemented in 0.5.0 — Dot cloud compatibility (2026-10-29)
 
 Implemented: native CPU geometry rasterization, both juggler representations, ox and canvas-only custom adapters; explicit backend selection, automatic browser fallback with diagnostics, actual CPU setup verification and scoped writable npm cache. Original Dot host reported fresh setup and all three first exports successful, including unchanged pottery source. Archive/installation and browserless CI are release gates. See CHANGELOG.md and references/runtime.md for shipped capabilities.

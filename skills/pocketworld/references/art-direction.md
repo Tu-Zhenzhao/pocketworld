@@ -14,6 +14,8 @@ Choose footprint by story: planar court, pier strip, oval performer stage, irreg
 
 State hero, primary action, recognizable silhouette cues, footprint, camera, subject cell sizes, light, major value groups, material ramps, outline policy and fixed contacts. For characters, state head/body/hand sizes in cells: whole-canvas resolution is not a substitute. Simplify a face or reframe if its budget cannot carry the proposed detail.
 
+Select those feature budgets before choosing the whole grid. View the [annotated budget comparison](art-studies.md); neither 144 nor 288 is a global quality target. When a hand/rim/animal cannot read, revise contour, negative space, overlap, local pose and value separation before adding cells. State the specific remaining information loss before raising a budget.
+
 ## Shape hierarchy
 
 1. At native/thumbnail size identify actor, animal, prop and action without texture.
@@ -34,6 +36,8 @@ One coherent key light and stable contact shadows explain volume/support. Dither
 Inspect 1× cells, final presentation size and integer-enlarged hero crops. Record what is recognizable, what is wrong and what changed. A good reference is not proof the implementation is correct.
 
 For motion identify support, moving volume, constraints and response. Smaller amplitude cannot repair an anatomically wrong deformation. Floating bodies, isolated belly patches, stretching limbs, sliding feet and disconnected lines require structural fixes.
+
+Inspect actual native coverage through the extreme, not just endpoint coordinates: thin necks, wrists and rims can pinch apart during rasterization. Test overlapping connected volumes/segments and nearby occluders. Keep continuous state for natural timing; do not round every motion variable just because the final coverage occupies integer cells.
 
 The shipped juggler and redesigned ox scene demonstrate two subjects and rendering approaches. Use them as direction for composition and deliberate clusters; new anatomy, framing and action still need their own visual review.
 

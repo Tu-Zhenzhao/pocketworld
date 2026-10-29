@@ -1,0 +1,113 @@
+{
+  "createdAt": "2026-10-29T08:15:15.041Z",
+  "status": "generated",
+  "version": "0.6.0",
+  "backend": "cpu",
+  "requestedBackend": "cpu",
+  "browserError": null,
+  "componentTag": "pocketworld-pottery-coarse-demonstration-e25aee39",
+  "title": "池畔陶艺 · 少格验证",
+  "selectedVariant": "final",
+  "grid": 144,
+  "fps": 60,
+  "seconds": 12,
+  "alphaProbe": {
+    "empty": 17166,
+    "solid": 3570
+  },
+  "artifacts": {
+    "component": {
+      "file": "component.js",
+      "example": "embed.html",
+      "tagName": "pocketworld-pottery-coarse-demonstration-e25aee39",
+      "alpha": true
+    },
+    "video": {
+      "file": "loop.mp4",
+      "fps": 60,
+      "frames": 720,
+      "seconds": 12,
+      "width": 432,
+      "height": 432,
+      "alpha": false
+    },
+    "gif": {
+      "file": "loop.gif",
+      "fps": 20,
+      "seconds": 12,
+      "width": 432,
+      "height": 432,
+      "alpha": "binary"
+    }
+  },
+  "files": {
+    "README.txt": {
+      "bytes": 338,
+      "sha256": "8472eae36a5127e6bb18ee0397a3836108cdae77c57e34fd04609103fddc0288"
+    },
+    "app.js": {
+      "bytes": 7184,
+      "sha256": "0c4cbeae349c932d4f56f43796d201bcbb1856b578e4ccc87fe4f71deb5ff917"
+    },
+    "component-module.js": {
+      "bytes": 3237,
+      "sha256": "8f08189851a83f9f5b7cc4e2cfdde77e9ea4d5895fba058e0aa25eca8f002c6e"
+    },
+    "component.js": {
+      "bytes": 49606,
+      "sha256": "9f51fef0f4d79c623f4f7b04f6294c7e4ab5aad11bdceaf3409119aabcda77d9"
+    },
+    "embed.html": {
+      "bytes": 543,
+      "sha256": "52639afc26df3bde70163ab3d77b17a8c66e138cedc89b721b2ebbf7367dd940"
+    },
+    "engine/math.js": {
+      "bytes": 1172,
+      "sha256": "53dcc9e8d253c43be118dd9cbc3ddc558466968bd28fd90ad5a60f4ed9bfecc7"
+    },
+    "engine/mesh.js": {
+      "bytes": 2599,
+      "sha256": "ee9f44aac08a72e7a0d9b14f2dfa64b2bfee7f0f92b7a3c6e36c5c95354fad43"
+    },
+    "engine/pixels.js": {
+      "bytes": 1829,
+      "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
+    },
+    "engine/renderer.js": {
+      "bytes": 6290,
+      "sha256": "bd093dbbb8e4567e086c6571c324e004e97ba9bdf9933f0c45bdf0494d612e65"
+    },
+    "engine/software.js": {
+      "bytes": 4480,
+      "sha256": "d6c45b148d66f616f640f4afd4cd23394ea51c1b7b7b0188b888b160ff1043c2"
+    },
+    "index.html": {
+      "bytes": 59963,
+      "sha256": "6903db589c3c3a070af78e37dfc4968a654924366c76b6df6acedec5a576bd25"
+    },
+    "loop.gif": {
+      "bytes": 880622,
+      "sha256": "7509432402d8f65f22d9fcad063a4d2e33615e23d15892865e7fff957e3ebb15"
+    },
+    "loop.mp4": {
+      "bytes": 77594,
+      "sha256": "594d5b2cf8ab653e208c659cf20d38f2cc13494f7942b2ac232ed0685d4d81e0"
+    },
+    "poster.png": {
+      "bytes": 2191,
+      "sha256": "1fe8eec6729f5e8380f3a19989072cd79936b845cdc7db53a4acfbf5d339bb83"
+    },
+    "scenes/current/ART_DIRECTION.md": {
+      "bytes": 1114,
+      "sha256": "1b4fd83579a66b4f1ba62b15668dddef1e3b1861e130027c527599da22281db6"
+    },
+    "scenes/current/delivery.json": {
+      "bytes": 525,
+      "sha256": "23c2f318a5242ae6aff495c7775f1615d2a9218767fd8df247c34eeaec325d33"
+    },
+    "scenes/current/scene.js": {
+      "bytes": 9428,
+      "sha256": "364320e078debb19eb6daeda01f886e2df87630d0d5bddacae28d78895814b7a"
+    }
+  }
+}

@@ -1,9 +1,9 @@
 {
-  "createdAt": "2026-10-29T05:42:45.664Z",
+  "createdAt": "2026-10-29T08:14:47.145Z",
   "status": "generated",
-  "version": "0.5.0",
-  "backend": "browser",
-  "requestedBackend": "browser",
+  "version": "0.6.0",
+  "backend": "cpu",
+  "requestedBackend": "cpu",
   "browserError": null,
   "componentTag": "pocketworld-juggler-9603749c",
   "title": "Small acts, three balls",
@@ -12,8 +12,8 @@
   "fps": 60,
   "seconds": 12,
   "alphaProbe": {
-    "empty": 50071,
-    "solid": 7529
+    "empty": 50067,
+    "solid": 7533
   },
   "artifacts": {
     "component": {
@@ -86,16 +86,16 @@
       "sha256": "29386d8d611f6419b37854530aac03d747e5d3a7526bcad79650209d0ee77241"
     },
     "loop.gif": {
-      "bytes": 1985815,
-      "sha256": "e8bbcce93d3a1a5ab21bfd18297d9a93acf8e0dbcb09fbd98c2908f0481519b1"
+      "bytes": 1983655,
+      "sha256": "1d5bb3ebd49980d5c40d9e8f812bcd1bbded8d7bb5750520d458a5b10bfd0c39"
     },
     "loop.mp4": {
-      "bytes": 382304,
-      "sha256": "79aeb6beac4fbd6430e952ef8d3a08bad0365f65bb1fef7ad61c658ee1ef2de2"
+      "bytes": 380224,
+      "sha256": "e973a714f2396cfc3e1f327eedc139e11aceb8e208ee08aa60e4b124b03047c9"
     },
     "poster.png": {
-      "bytes": 6916,
-      "sha256": "c31ebbed9cf4fb33f9f4fb2a8ace072f1d9e8c1297333aa8dabd14caeeec7f34"
+      "bytes": 4395,
+      "sha256": "36ede6a6483a532c6f74de715cd2bf0bba8804b9163c1ec98adb111022103f73"
     },
     "scenes/current/delivery.json": {
       "bytes": 731,
