@@ -12,7 +12,8 @@ In a repository checkout:
 npm ci
 npm run setup
 npm run doctor
-node cli/pocketworld.js init my-scene
+node cli/pocketworld.js init my-scene --template pixel
+# Use --template geometry for projected volume (the existing default).
 # Edit my-scene/scene.js and delivery.json for the user's actual story.
 node cli/pocketworld.js render my-scene --out my-review --formats preview
 node cli/pocketworld.js dev my-review
@@ -22,9 +23,15 @@ For an installed Skill, copy the starter folder to your workspace and call its `
 
 ## Design before motion
 
-Record the intended view, footprint, silhouette cues, subject sizes in cells, palette/light and fixed contacts. Start around240–300 cells with a restrained palette, then adapt to the story. Check the subject at native size before animating it. People and animals need purposeful anatomy; props need connected thin structures; textures support the forms.
+Extract the story, identity cues and support/contact relationships; preserve explicit user constraints and redesign incidental clutter/overlaps for readability. Choose actor/head/hand/prop sizes in cells before choosing canvas/framing. A starter's resolution is not a target. View the [annotated native studies](../skills/pocketworld/references/art-studies.md), then save actual silhouette and major-value drafts before detailed motion. If a feature is unclear, revise structure before adding texture or cells.
 
 Give interacting parts a common state: hand and ball, jaw and grass, contact and ripple. Breathing changes a continuous supported volume. Inspect stills, action extremes, adjacent frames and the loop seam; refine with concrete observations.
+
+```sh
+node cli/pocketworld.js study my-scene --out my-study --times 0,2.3,2.3166667,12
+```
+
+This browser-free helper saves native PNGs, integer enlargements/crops and facts in `study.json`; `study.html` is an optional local gallery. Select actual times within your scene's loop. Statistics do not assess beauty. The pottery lesson includes a full-loop connectivity check and the real neck-gap failure it catches. Author scene-specific semantic assertions for other subjects; a fixed mask is not a universal rig.
 
 ## Scene contract
 
@@ -46,3 +53,5 @@ Use a fresh output directory. The helper refuses to overwrite an existing result
 Video/GIF need ffmpeg. Exports use integer scaling; odd native grids use ×4 so H.264 output dimensions stay even. The component needs WebGL2 and a host that allows scripts; [embedding](embedding.md) covers both standalone and module source.
 
 In browser-restricted environments add `--backend cpu` to doctor and render/deliver. CPU preserves native geometry, palette and actions; it never quantizes a reference. See [capabilities and custom adapters](../skills/pocketworld/references/runtime.md).
+
+Cloud localhost can be unreachable from the user's or agent's browser. Inspect actual PNGs in the workspace and send media plus the review package. Local users still serve and open the full player. Distinguish successful rendering/encoding from verified browser access; do not require publishing a website just to deliver an animation.

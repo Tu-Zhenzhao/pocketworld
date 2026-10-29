@@ -6,7 +6,7 @@
 
 Give your agent a scene idea and a reference image. Let a tiny pixel world come to life.
 
-[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.5.1](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.1)
+[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.6.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.6.0)
 
 ![A native pixel character juggling three balls beside a tree and bench](examples/juggler/loop.gif)
 
@@ -72,12 +72,20 @@ The agent authors and refines the scene. Complex anatomy and choreography can ta
 
 ## Native worlds, even without Chrome
 
-Version 0.5 adds native CPU export for browser-restricted agent environments, covering standard geometry and both included examples. The same authored shapes and motion produce the poster, video, GIF and component package. Use `--backend cpu` for a browser-free run, or `auto` for browser capture with CPU fallback. See [runtime support](skills/pocketworld/references/runtime.md) for custom-renderer boundaries. Reference-image prompts now use the approved minimalist visual anchors across different stories.
+Native CPU export works in browser-restricted agent environments, covering standard geometry and all shipped examples. The same authored shapes and motion produce the poster, video, GIF and component package. Use `--backend cpu` without Chrome. If a cloud computer's localhost is unreachable, the agent can still send real images, video/GIF and a review package. Local users keep the full interactive player. See [runtime support](skills/pocketworld/references/runtime.md).
+
+## Fewer cells, more intention — 0.6
+
+Start with what makes the scene recognizable: its silhouette, spacing, supports and action. The new [annotated studies](skills/pocketworld/references/art-studies.md) show fine, deliberately simplified and over-coarse versions; real construction stages; and a moving neck that needed a structural repair. Choose feature budgets before canvas size. A browser-free study helper saves exact native frames and detail crops before polishing.
+
+![Pottery: authored native shapes and connected motion](examples/pottery/loop.gif)
+
+The pottery scene is a runnable example, alongside the three-ball juggler and resting ox. The new direct-cell starter complements geometric volume; both use the same player and exports. These tools help the agent inspect its work; they do not replace artistic judgment or reconstruct arbitrary photographs automatically.
 
 ## Run the example yourself
 
 ```sh
-git clone --depth 1 --branch v0.5.1 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.6.0 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo

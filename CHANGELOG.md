@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-10-29
+
+- Choose feature budgets before canvas resolution; preserve readable silhouette/value intermediates before motion. Added annotated fine/readable/over-coarse comparisons, actual pottery stages, native edge coverage and three subject-transfer exercises with owned runnable source.
+- Added a portable direct-cell starter and browser-free `study.mjs` / CLI `study`: actual native frames, exact integer detail crops, time samples, source hashes and factual statistics without an aesthetic score.
+- Added the user-approved pottery direction as a runnable example. Fixed a neck silhouette that pinched apart at drinking contact, with full-loop connectivity and real failing-counterexample regressions.
+- Validate actual `config.palette` for all adapters before reporting success, preventing a custom scene from exporting a poster with a broken review player. Kept the existing geometry/CPU/component contracts.
+- Clarified cloud workspace media/file delivery versus locally accessible interactive review. CPU export/inspection needs no browser or reachable localhost; the full local player and transparent components remain available.
+
 ## 0.5.1 — 2026-10-29
 
 - Isolate the self-contained Skill's ES modules from its host project's CommonJS setting. CPU rendering now loads reliably when installed under a `type:commonjs` parent, without relying on Node's implicit module detection.

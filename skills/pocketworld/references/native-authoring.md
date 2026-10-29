@@ -6,6 +6,8 @@ This is a scene toolkit used by the calling agent, not an image reconstruction m
 
 Scene folder: `scene.js`, optional configuration modules, `delivery.json`. The helper copies it into `scenes/current/` and supplies `engine/`. Import `../../engine/math.js`, `mesh.js`, `pixels.js` as needed; these paths are resolved in the generated output.
 
+For direct 2D drawing start from `assets/pixel-starter/scene/`; for projected geometry use `assets/native-starter/scene/`. Both contain a short design-record template. Their default grids are working examples, not mandatory budgets. Use `PixelPen` for hard native coverage rather than Canvas path fill/stroke. Fractional geometry/pose coordinates are fine; the final cell coverage is deliberately sampled. Turning off `imageSmoothingEnabled` only controls image scaling and does not remove path antialiasing.
+
 ```js
 export default {
   config,                     // id, title, grid, loop, fps, camera, palette, materials, light
@@ -24,6 +26,8 @@ Optional material0 `config.field` gives an elliptical meadow: `radii`, optional 
 Native sprites, geometry and their combinations can also expose `createRenderer(canvas, execution)` instead of `geometry`. This returns an independent object with `canvas`, 2D `ctx`, `draw(time, options)`, `capture(integerScale)`, and idempotent `destroy()`. Draw clears stale pixels, preserves alpha and accepts `opaque`; capture returns base64 PNG. Each mount owns resources and state. The juggler example demonstrates a native character with geometric scenery/shadows; the ox scene uses the default geometry renderer. Both use exactly the same review/export/component path. `execution.backend` is `cpu` for Node export; use `SoftwareRenderer` / `TriangleRaster` from `engine/software.js` for custom geometry, or ordinary Canvas2D native drawing. Node provides `document.createElement("canvas")` and `ImageData`, not a browser DOM or WebGL. Do not import Node-only dependencies from scene modules: the same source must still run in a browser. A custom WebGL renderer without a CPU adapter must report unsupported; do not substitute another scene.
 
 Do not borrow one rig for every species or preload the shipped example as a replacement for the requested story.
+
+Every adapter, including a custom `createRenderer`, must supply `config.id/grid/loop/fps/palette`. Palette is a nonempty list of actual color strings or RGB byte triples, required by the review UI even if the renderer stores colors elsewhere. Use RGB byte triples for standard geometry; custom Canvas renderers may use supported CSS colors (including short hex/named colors), with explicit hex useful for comparing actual pixels. Invalid/missing lists fail before success is reported; authors remain responsible for the renderer's color format. `assets/pixel-starter/scene/scene.js` is a complete CPU/browser portable example; include clear/destroy and integer `capture` behavior when adapting it.
 
 ## Delivery metadata
 

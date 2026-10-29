@@ -1,0 +1,33 @@
+{
+  "title": "池畔陶艺 · 少格验证",
+  "caption": "原生大格造型，安静的捏塑与饮水。",
+  "focus": [
+    {
+      "id": "hands-pot",
+      "label": "双手与陶罐",
+      "rect": [
+        41,
+        61,
+        36,
+        28
+      ]
+    },
+    {
+      "id": "duck-drinking",
+      "label": "鸭子饮水",
+      "rect": [
+        87,
+        80,
+        29,
+        24
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "id": "final",
+      "label": "少格自然微动",
+      "options": {}
+    }
+  ]
+}

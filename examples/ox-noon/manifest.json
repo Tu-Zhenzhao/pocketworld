@@ -1,9 +1,9 @@
 {
-  "createdAt": "2026-10-29T05:42:40.619Z",
+  "createdAt": "2026-10-29T08:15:12.687Z",
   "status": "generated",
-  "version": "0.5.0",
-  "backend": "browser",
-  "requestedBackend": "browser",
+  "version": "0.6.0",
+  "backend": "cpu",
+  "requestedBackend": "cpu",
   "browserError": null,
   "componentTag": "pocketworld-ox-noon-redesign-a18982f3",
   "title": "Dreaming on a buffalo",
@@ -12,8 +12,8 @@
   "fps": 60,
   "seconds": 12,
   "alphaProbe": {
-    "empty": 46123,
-    "solid": 11477
+    "empty": 46140,
+    "solid": 11460
   },
   "artifacts": {
     "component": {
@@ -21,6 +21,23 @@
       "example": "embed.html",
       "tagName": "pocketworld-ox-noon-redesign-a18982f3",
       "alpha": true
+    },
+    "video": {
+      "file": "loop.mp4",
+      "fps": 60,
+      "frames": 720,
+      "seconds": 12,
+      "width": 720,
+      "height": 720,
+      "alpha": false
+    },
+    "gif": {
+      "file": "loop.gif",
+      "fps": 20,
+      "seconds": 12,
+      "width": 720,
+      "height": 720,
+      "alpha": "binary"
     }
   },
   "files": {
@@ -65,12 +82,20 @@
       "sha256": "d6c45b148d66f616f640f4afd4cd23394ea51c1b7b7b0188b888b160ff1043c2"
     },
     "index.html": {
-      "bytes": 89140,
-      "sha256": "499331e32f3206a9eb699cc4fc08c94b55203bfeecddc36a63891f38af07ccba"
+      "bytes": 89332,
+      "sha256": "310dcae4cd6ce5e92d951432721444aae90a4818981944e0d98e1d3eb07b2c2b"
+    },
+    "loop.gif": {
+      "bytes": 2655292,
+      "sha256": "d144ea2df1610899e8817385c423ed4c39c7d0d65f7767bb085a9d6ab9fb942b"
+    },
+    "loop.mp4": {
+      "bytes": 221697,
+      "sha256": "6ecea86c45600336ca38d5a1a19e01712122985e3f4a32818499c385b81c99dd"
     },
     "poster.png": {
-      "bytes": 9326,
-      "sha256": "f1aa09de276ac259cb92cacdda9965701cd0a31a1f8a0c83929e69dcaf9c56cb"
+      "bytes": 6047,
+      "sha256": "8e11a8017d53c74561c2214b986ec0d0857fb83f3c3729899654e8402194d858"
     },
     "scenes/current/config.js": {
       "bytes": 1316,

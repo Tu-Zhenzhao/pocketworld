@@ -23,4 +23,6 @@ Review the result before presenting it: is it as quiet as the actual anchor, doe
 
 For a sentence-only request, generate a design reference with the host image tool when available. For a supplied image, preserve the user's story, pose and useful palette while redesigning for the native grid. Do not demand another upload when the agent can progress. If image generation is unavailable, make an authored blockout, explain the missing reference step and continue.
 
+First extract story, identity silhouette, support/contact and event causes. User-locked features take priority; otherwise omit incidental texture/objects and rearrange overlaps for readability. A photo's tiny fingers, folds and smooth contours are not an automatic pixel inventory. Compare the [actual coarse/fine studies](art-studies.md), choose local feature budgets and save a silhouette/major-value native draft before detailed motion. Do not raise resolution merely to match an elaborate input.
+
 A reference can be large. It is a design guide, **never the final raster substrate**: subsequently author shapes and motion at native resolution. Do not shrink/quantize an illustration and animate cutouts. Review the native static pose separately from the reference, record defects and refine before detailed animation. Technical export success does not establish visual approval.

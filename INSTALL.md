@@ -1,4 +1,4 @@
-# Install Pocketworld 0.5.1
+# Install Pocketworld 0.6.0
 
 This is the public entry point for agents. Read this file, install the Skill into the calling host's supported directory, then read the installed `SKILL.md`. Do not stop after cloning the repository.
 
@@ -10,7 +10,7 @@ If the host has its own GitHub Skill installer, the source is:
 
 ```text
 Repository: Tu-Zhenzhao/pocketworld
-Ref: v0.5.1
+Ref: v0.6.0
 Skill path: skills/pocketworld
 ```
 
@@ -21,7 +21,7 @@ That installer may copy files only. Continue with runtime setup and the smoke te
 Requires Node20+, npm, Git and an agent able to run terminal commands. A reference-image generation tool is optional if the user supplies an image. The renderer itself uses no model API key.
 
 ```sh
-git clone --depth 1 --branch v0.5.1 https://github.com/Tu-Zhenzhao/pocketworld.git pocketworld-source
+git clone --depth 1 --branch v0.6.0 https://github.com/Tu-Zhenzhao/pocketworld.git pocketworld-source
 cd pocketworld-source
 node scripts/install.mjs --dest /absolute/path/to/host/skills/pocketworld
 ```
@@ -34,7 +34,7 @@ node scripts/install.mjs --dest /absolute/path/to/host/skills/pocketworld --upda
 
 The old Skill is backed up outside active Skill discovery before replacement. Unrecognized directories are never overwritten. Browser download is optional with `--install-browser`; default installation needs no browser. `--no-browser-download` remains accepted.
 
-Alternatively download `pocketworld-0.5.1-skill.zip` and `SHA256SUMS` from the [release](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.1), verify the archive checksum, extract it, then run its `pocketworld/scripts/install.mjs --dest ...` with Node. The archive includes `SKILL.md`, guides, examples, runtime and dependency lockfile.
+Alternatively download `pocketworld-0.6.0-skill.zip` and `SHA256SUMS` from the [release](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.6.0), verify the archive checksum, extract it, then run its `pocketworld/scripts/install.mjs --dest ...` with Node. The archive includes `SKILL.md`, guides, examples, runtime and dependency lockfile.
 
 ## 3. Check the installed runtime
 
@@ -60,13 +60,16 @@ Choose a fresh output directory whose parent already exists:
 node /absolute/path/to/installed/pocketworld/scripts/deliver.mjs \
   /absolute/path/to/installed/pocketworld/assets/examples/juggler \
   --out /absolute/path/to/fresh-review --formats preview,component --backend cpu
-node /absolute/path/to/installed/pocketworld/scripts/serve.mjs /absolute/path/to/fresh-review
 ```
 
-On hosts with an accessible browser, open the printed URL. If the agent browser cannot reach workspace localhost, inspect the fresh poster, provide the review package to the user and mark interactive playback unverified. Verify play/pause, replay, seeking and detail view. Select the transparent component, inspect `embed.html` on a colored background, and confirm that the actor, three balls and white clothing remain visible. The component is also available as unbundled modules for stricter CSP.
+On a local host, run `node /absolute/path/to/installed/pocketworld/scripts/serve.mjs /absolute/path/to/fresh-review` and open the printed URL. Verify play/pause, replay, seeking and detail view. Select the transparent component, inspect `embed.html` on a colored background, and confirm that actor, balls and white clothing remain visible. The component is also available as unbundled modules for stricter CSP.
+
+On a cloud host whose workspace localhost is unreachable, inspect the fresh poster directly and attach the media/review package to the conversation; interactive playback remains unverified there. Native CPU export and browser-free study sampling still work. No public server or host security change is required. Do not keep retrying localhost or claim that an unreachable cloud URL is a user-viewable preview.
 
 ## 5. Start the user's world
 
 Read the installed `SKILL.md` and its relevant references. Turn the user's sentence and reference into a scene-specific composition, native shapes and shared action state. Existing examples are implementation guidance; a new prompt needs a new design, not a relabeled sample. Keep the review UI, refine the scene and let the user choose video, GIF or a web component.
+
+For 0.6, view the installed annotated art studies, choose local feature budgets, and make a readable silhouette/major-value still before animation. `scripts/study.mjs` produces integer detail evidence without Chrome. Direct-cell and geometry starters are both included. Canvas custom adapters must declare actual `config.palette`; missing fields fail before a broken player is handed off.
 
 A host may require refreshing Skill discovery or starting the next agent turn before a newly installed Skill is available. Report the actual install location, version, doctor result and preview path. Do not claim an installation worked if the environment could not render the smoke test.
