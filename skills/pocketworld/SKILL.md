@@ -3,7 +3,7 @@ name: pocketworld
 description: Create and refine animated pixel dioramas from a scene idea and reference image, with native pixel characters, geometric volume, connected motion and a review player offering video, GIF or transparent web component delivery.
 ---
 
-# Pocketworld 0.4.0
+# Pocketworld 0.5.0
 
 Author a little world at its final pixel grid. The image guides composition, palette and anatomy; construct native shapes and actions for the actual story. The calling agent performs the design and coding. Complex subjects may need several refinements.
 
@@ -11,11 +11,15 @@ Author a little world at its final pixel grid. The image guides composition, pal
 
 Treat the directory containing this file as `SKILL_ROOT`. Everything needed by the Skill is inside it. Use its actual absolute path in commands, including paths with spaces.
 
-1. If needed, run `node SKILL_ROOT/scripts/setup.mjs --install-browser`, then `node SKILL_ROOT/scripts/doctor.mjs`. Node20+ and browser WebGL2 are required; video/GIF additionally need ffmpeg. Reference generation uses the host agent's image tool, not a bundled model/API service.
-2. For sentence-only input, make a design reference with the host image tool when available; use a supplied image when present. Read [reference design](references/reference-design.md), [art direction](references/art-direction.md), relevant [drawing recipes](references/drawing-recipes.md), and [native authoring](references/native-authoring.md).
+1. If needed, run `node SKILL_ROOT/scripts/setup.mjs`, then `node SKILL_ROOT/scripts/doctor.mjs --backend cpu`. Node20+ and native CPU rendering work without a browser; browser/WebGL2 is optional for capture, and needed by geometry components on the viewing browser; video/GIF additionally need ffmpeg. Reference generation uses the host agent's image tool, not a bundled model/API service.
+2. For sentence-only input, make a design reference with the host image tool when available; use a supplied image when present. Before image generation, read [reference design](references/reference-design.md), [art direction](references/art-direction.md), relevant [drawing recipes](references/drawing-recipes.md), and [native authoring](references/native-authoring.md).
 3. Copy `assets/native-starter/scene/` into a fresh workspace scene folder. The shipped `assets/examples/juggler/` and `ox-noon/` are runnable guidance for two different subjects/rendering approaches; make a new design for a new prompt.
 4. Build a review: `node SKILL_ROOT/scripts/deliver.mjs /absolute/scene --out /absolute/fresh-review --formats preview`. Serve it with `node SKILL_ROOT/scripts/serve.mjs /absolute/fresh-review`.
 5. Read [delivery](references/delivery.md), retain the player and let the user choose final formats. Existing choices persist. Publish only when authorized.
+
+View an approved style anchor before reference generation; include it as the image tool's style reference when supported. Keep the user's scene open-ended, but keep the minimal visual language stable. Inspect the generated reference for overdecoration before showing it.
+
+For restricted hosts, use `--backend cpu` on doctor/deliver. `auto` attempts browser capture then falls back to native CPU; `browser` is strict. Standard geometry and both shipped examples support CPU. Custom WebGL renderers need a CPU adapter; see [runtime support](references/runtime.md). Never change host security settings to make Chrome run.
 
 ## Design and motion
 

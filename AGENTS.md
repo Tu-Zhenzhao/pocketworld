@@ -1,4 +1,4 @@
-# Pocketworld 0.4.0
+# Pocketworld 0.5.0
 
 Read `skills/pocketworld/SKILL.md` before authoring or refining scenes. Public agent onboarding starts at `INSTALL.md` and `llms.txt`.
 

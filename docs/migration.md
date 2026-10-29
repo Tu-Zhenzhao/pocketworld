@@ -7,3 +7,7 @@ Their complete history is preserved at the [0.3 snapshot](https://github.com/Tu-
 For new work, follow [installation](../INSTALL.md), author a native `scene.js` plus `delivery.json`, and use the new review/export helper. References guide the design; the new scene is authored at its final grid. Generated components export `mount` and `tagName`; copy their current `embed.html` rather than reusing the old element.
 
 The runtime no longer needs Python. Chrome/WebGL2 is required for rendering, ffmpeg for video/GIF, and the installed Skill ships all other scene tooling. Updates through the new installer preserve a backup of a recognized prior Skill.
+
+## Moving to 0.5.0
+
+Native art and delivery remain. Native CPU export is restored for standard geometry and the included examples without bringing back the old image pipeline. Use `--backend cpu` on restricted hosts; custom WebGL renderers need an explicit CPU adapter. Setup verifies CPU rendering and browser download is optional. See [runtime support](../skills/pocketworld/references/runtime.md).

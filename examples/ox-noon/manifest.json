@@ -1,7 +1,10 @@
 {
-  "createdAt": "2026-10-28T15:21:38.424Z",
+  "createdAt": "2026-10-29T05:42:40.619Z",
   "status": "generated",
-  "version": "0.4.0",
+  "version": "0.5.0",
+  "backend": "browser",
+  "requestedBackend": "browser",
+  "browserError": null,
   "componentTag": "pocketworld-ox-noon-redesign-a18982f3",
   "title": "Dreaming on a buffalo",
   "selectedVariant": "redesign",
@@ -34,8 +37,8 @@
       "sha256": "d3e47eff03531894c410a90c304d030b7306c617b97ebb124166196b81d95b1e"
     },
     "component.js": {
-      "bytes": 64166,
-      "sha256": "11aeae75351d6bfaa866741c404456ba6e52067477907ac88872d5115e144012"
+      "bytes": 78786,
+      "sha256": "2e5e783ebd9685d388f574a5683d8004b48ebe2d84ef027727d334207a31119a"
     },
     "embed.html": {
       "bytes": 495,
@@ -54,12 +57,16 @@
       "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
     },
     "engine/renderer.js": {
-      "bytes": 6164,
-      "sha256": "e265fa026926f7380d1145a056dc32889c87cc72f0a3d36d39c7182bd8975865"
+      "bytes": 6290,
+      "sha256": "bd093dbbb8e4567e086c6571c324e004e97ba9bdf9933f0c45bdf0494d612e65"
+    },
+    "engine/software.js": {
+      "bytes": 4480,
+      "sha256": "d6c45b148d66f616f640f4afd4cd23394ea51c1b7b7b0188b888b160ff1043c2"
     },
     "index.html": {
-      "bytes": 74520,
-      "sha256": "4048d8a1fd336cc7c1951278a4420544280794eabf7a72e833138571e726ccd1"
+      "bytes": 89140,
+      "sha256": "499331e32f3206a9eb699cc4fc08c94b55203bfeecddc36a63891f38af07ccba"
     },
     "poster.png": {
       "bytes": 9326,

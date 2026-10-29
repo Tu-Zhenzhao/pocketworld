@@ -33,6 +33,7 @@ jobs:
         run: node --input-type=module -e "import {chromePath} from './skills/pocketworld/scripts/browser.mjs'; console.log('CHROME='+chromePath())" >> "$GITHUB_ENV"
       - run: python -m pip install -r tests/requirements.txt
       - run: npm test
+      - run: npm run test:cpu
       - run: npm run test:native
       - run: npm run test:install
       - run: node tests/examples.mjs
@@ -43,3 +44,22 @@ jobs:
         with:
           name: pocketworld-${{ matrix.node }}
           path: dist/
+
+  browserless:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node: ['20', '22']
+    env:
+      PW_CPU_ONLY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci
+      - run: node cli/pocketworld.js setup
+      - run: node cli/pocketworld.js doctor --backend cpu
+      - run: npm run test:cpu

@@ -24,7 +24,7 @@ export function chromePath() {
     process.env.LOCALAPPDATA&&path.join(process.env.LOCALAPPDATA,'Google/Chrome/Application/chrome.exe'),"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium", "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser"].filter(Boolean).find(existsSync);
-  if (!found) throw new Error("Chrome not found. Set CHROME=/path/to/chrome. Native scenes have no CPU fallback.");
+  if (!found) throw new Error("Chrome not found. Set CHROME=/path/to/chrome. Use --backend cpu for native software rendering.");
   return found;
 }
 

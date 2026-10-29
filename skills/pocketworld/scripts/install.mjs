@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';import {randomUUID} from 'node:crypto';import {fileURLToPath} from 'node:url';import {parseArgs} from 'node:util';import {run} from './runtime.mjs';
 const source=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-export async function installSkill({dest,update=false,skipDependencies=false,installBrowser=true}={}){
+export async function installSkill({dest,update=false,skipDependencies=false,installBrowser=false}={}){
  if(!dest)throw Error('Choose a host Skill directory with --dest /path/to/skills/pocketworld');
  const target=path.resolve(dest);if(target===source||target.startsWith(source+path.sep)||source.startsWith(target+path.sep))throw Error('Install destination must be separate from the source Skill');
  const version=(await fs.readFile(path.join(source,'VERSION'),'utf8')).trim();let existing=false;
@@ -16,5 +16,5 @@ export async function installSkill({dest,update=false,skipDependencies=false,ins
   return{status:skipDependencies?'staged':existing?'updated':'installed',version,path:target,runtimeReady:!skipDependencies,backup:backup||null};
  }catch(error){await fs.rm(stage,{recursive:true,force:true});throw error}
 }
-export async function installCLI(){const{values}=parseArgs({options:{dest:{type:'string'},update:{type:'boolean'},'skip-deps':{type:'boolean'},'no-browser-download':{type:'boolean'},help:{type:'boolean'}}});if(values.help){console.log('node scripts/install.mjs --dest /path/to/skills/pocketworld [--update] [--no-browser-download]\nDefault: install Node dependencies and download Chrome if none is available. Existing Pocketworld updates are backed up outside Skill discovery. --skip-deps is for source-only inspection/tests.');return}try{const result=await installSkill({dest:values.dest,update:values.update,skipDependencies:values['skip-deps'],installBrowser:!values['no-browser-download']});console.log(JSON.stringify(result,null,2));}catch(error){console.error(error.message);process.exitCode=1}}
+export async function installCLI(){const{values}=parseArgs({options:{dest:{type:'string'},update:{type:'boolean'},'skip-deps':{type:'boolean'},'no-browser-download':{type:'boolean'},'install-browser':{type:'boolean'},help:{type:'boolean'}}});if(values.help){console.log('node scripts/install.mjs --dest /path/to/skills/pocketworld [--update] [--no-browser-download]\nDefault: install and verify native CPU rendering. Browser download is optional with --install-browser. Existing Pocketworld updates are backed up outside Skill discovery. --skip-deps is for source-only inspection/tests.');return}try{const result=await installSkill({dest:values.dest,update:values.update,skipDependencies:values['skip-deps'],installBrowser:!!values['install-browser']&&!values['no-browser-download']});console.log(JSON.stringify(result,null,2));}catch(error){console.error(error.message);process.exitCode=1}}
 if(process.argv[1]&&await fs.realpath(process.argv[1]).catch(()=>null)===await fs.realpath(fileURLToPath(import.meta.url)))await installCLI();

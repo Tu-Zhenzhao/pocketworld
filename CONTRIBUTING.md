@@ -4,7 +4,7 @@ Canonical Skill sources live in `skills/pocketworld/`. Keep that directory indep
 
 ```sh
 npm ci
-npm run setup -- --install-browser
+npm run setup
 python3 -m pip install -r tests/requirements.txt  # development media verification only
 npm test
 npm run test:native
