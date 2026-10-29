@@ -18,7 +18,7 @@ export async function bundle(entry,cache=new Map(),stack=new Set()){
 }
 export function validateDelivery(data,config){
  const n=config.grid;if(!/^[a-z][a-z0-9-]{0,47}$/.test(config.id||''))throw Error('Scene id must be a unique lowercase ASCII slug, maximum48 characters');if(!Number.isInteger(n)||n<1||!Number.isFinite(config.loop)||config.loop<=0||!Number.isInteger(config.fps)||config.fps<1||!Number.isInteger(config.loop*config.fps))throw Error('grid/fps must be positive integers; loop × fps must be integer');
- if(!Array.isArray(config.palette)||!config.palette.length||config.palette.some(c=>!(typeof c==='string'?/^#[\da-f]{6}$/i.test(c):Array.isArray(c)&&c.length===3&&c.every(v=>Number.isInteger(v)&&v>=0&&v<=255))))throw Error('config.palette must list actual colors as #RRGGBB strings or [r,g,b] byte triples; the review player requires it, including custom Canvas scenes');
+ if(!Array.isArray(config.palette)||!config.palette.length||config.palette.some(c=>!(typeof c==='string'?c.trim().length>0:Array.isArray(c)&&c.length===3&&c.every(v=>Number.isInteger(v)&&v>=0&&v<=255))))throw Error('config.palette must list actual color strings or [r,g,b] byte triples; the review player requires it, including custom Canvas scenes');
  const focus=data.focus||[],variants=data.variants||[{id:'final',label:'当前方案',options:{}}];
  if(!variants.length||new Set(variants.map(v=>v.id)).size!==variants.length||variants.some(v=>!v.id||!v.label||!v.options||typeof v.options!=='object'))throw Error('Variants need unique ids, labels and options');
  if(new Set(['whole',...focus.map(f=>f.id)]).size!==focus.length+1)throw Error('Focus ids must be unique; whole is reserved');

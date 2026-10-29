@@ -27,7 +27,7 @@ Native sprites, geometry and their combinations can also expose `createRenderer(
 
 Do not borrow one rig for every species or preload the shipped example as a replacement for the requested story.
 
-Every adapter, including a custom `createRenderer`, must supply `config.id/grid/loop/fps/palette`. Palette is a nonempty list of actual `#RRGGBB` strings or RGB byte triples, required by the review UI even if the renderer stores colors elsewhere. Invalid/missing palettes fail before success is reported. `assets/pixel-starter/scene/scene.js` is a complete CPU/browser portable example; include clear/destroy and integer `capture` behavior when adapting it.
+Every adapter, including a custom `createRenderer`, must supply `config.id/grid/loop/fps/palette`. Palette is a nonempty list of actual color strings or RGB byte triples, required by the review UI even if the renderer stores colors elsewhere. Use RGB byte triples for standard geometry; custom Canvas renderers may use supported CSS colors (including short hex/named colors), with explicit hex useful for comparing actual pixels. Invalid/missing lists fail before success is reported; authors remain responsible for the renderer's color format. `assets/pixel-starter/scene/scene.js` is a complete CPU/browser portable example; include clear/destroy and integer `capture` behavior when adapting it.
 
 ## Delivery metadata
 
