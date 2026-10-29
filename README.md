@@ -6,7 +6,7 @@
 
 Give your agent a scene idea and a reference image. Let a tiny pixel world come to life.
 
-[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.5.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.0)
+[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.5.1](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.1)
 
 ![A native pixel character juggling three balls beside a tree and bench](examples/juggler/loop.gif)
 
@@ -77,7 +77,7 @@ Version 0.5 adds native CPU export for browser-restricted agent environments, co
 ## Run the example yourself
 
 ```sh
-git clone --depth 1 --branch v0.5.0 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.5.1 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo

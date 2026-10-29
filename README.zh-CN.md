@@ -6,7 +6,7 @@
 
 把一个小念头交给你的 Agent，让它在像素里生活起来。
 
-[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.5.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.0)
+[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.5.1](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.1)
 
 ![树下抛三个球的原生像素角色](examples/juggler/loop.gif)
 
@@ -67,7 +67,7 @@ Pocketworld 按目标网格设计轮廓、色块和细线；让手与道具、�
 ## 自己运行示例
 
 ```sh
-git clone --depth 1 --branch v0.5.0 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.5.1 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo

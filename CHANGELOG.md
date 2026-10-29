@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 — 2026-10-29
+
+- Isolate the self-contained Skill's ES modules from its host project's CommonJS setting. CPU rendering now loads reliably when installed under a `type:commonjs` parent, without relying on Node's implicit module detection.
+- Add independent install and extracted release-archive regressions for that host configuration. Native drawing and the review UI are unchanged.
+
+
 ## 0.5.0 — 2026-10-29
 
 - Native CPU export for standard geometry, material ramps, contact fields and pixel details, plus both juggler representations and the redesigned ox. Browser capture remains available; auto records browser failures and falls back without reverting to image pixelation.
