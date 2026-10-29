@@ -50,6 +50,18 @@ https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
 
 ## 发挥想象力
 
+### 用 Pocketworld 做出来的小世界
+
+两件安静的小作品。可以看，也可以拆开源码，改成你自己的场景。
+
+| 午后修单车 | 池畔陶艺 |
+|:---:|:---:|
+| <img src="examples/bicycle/loop.gif" width="360" alt="站在单车后方的维修者转动踏板，后轮缓缓停下，旁边的小猫轻轻呼吸"> | <img src="examples/pottery/loop.gif" width="陶艺师捏塑陶罐，岸边的鸭子低头喝水"> |
+| 转一下踏板，看车轮慢慢停下。猫在呼吸，草尖偶尔经过一阵风。 | 手沿着陶罐慢慢捏塑。鸭子喝口水，抬头，再歇一会儿。 |
+| [60fps 视频](examples/bicycle/loop.mp4) · [完整播放器](examples/bicycle/index.html) · [可编辑源码](skills/pocketworld/assets/examples/bicycle) | [60fps 视频](examples/pottery/loop.mp4) · [完整播放器](examples/pottery/index.html) · [可编辑源码](skills/pocketworld/assets/examples/pottery) |
+
+GIF 可以直接在这里看；细微动作建议看视频。完整播放器需下载后在本地启动服务。[示例使用说明](docs/samples.md) · [把修单车放进自己的网站](docs/embedding.md#use-the-bicycle-sample)。这些是经过多轮美术打磨的实际作品，不是一次生成的效果承诺。
+
 > 夏日小摊，风扇慢慢转，布帘偶尔被风掀起。
 
 > 草地上的牛嚼着草，背上的牧童盖着草帽，肚皮缓缓起伏。
@@ -63,6 +75,16 @@ https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
 Pocketworld 按目标网格设计轮廓、色块和细线；让手与道具、光与影、接触与反馈有共同的来由。Skill 自带分类美术规则、可运行示例，以及统一的展示和交付界面。
 
 实际制作由 Agent 完成。复杂动物造型和动作编排仍可能需要多轮打磨；它并不承诺把任意照片一键自动重建。
+
+## 0.5：受限环境也能制作原生世界
+
+新增原生 CPU 导出：直接绘制场景几何与像素形状，保留现有美术与交付 UI。受限宿主使用 `--backend cpu`，不启动 Chrome；`auto` 支持浏览器失败后转 CPU。标准几何、抛球和牛背示例均支持。自定义 WebGL 需要适配器，详见[运行能力](skills/pocketworld/references/runtime.md)。生成参考图前先查看极简风格锚点，用户自由描述场景，视觉语言保持克制与留白。
+
+## 0.6：用更少的格子，把故事讲清楚
+
+先决定轮廓、间隙、支撑和动作，再选择头、手、道具的格数，最后确定画布。[美术教学对照](skills/pocketworld/references/art-studies.md)包含过细／概括得当／过粗的同场景对比、真实中间稿，以及动作中断颈的修正案例。新的原生像素模板和无需浏览器的细看工具，让 agent 先看清自己的造型，再继续动画和润色。
+
+云端 agent 能在自己的执行环境用 CPU 绘制、导出并发送图片、视频、GIF 和交付包，不要求云电脑的 localhost 能被用户打开。本地使用时仍然保留完整播放器、重播、时间轴、细看和透明组件。陶艺、抛球和牛背示例都可运行；复杂造型仍需要实际视觉判断。
 
 ## 自己运行示例
 
@@ -80,15 +102,3 @@ npm run demo
 灵感来自 Shawn 的像素小世界。随包代码和示例渲染均由本项目自行制作，不包含原作者的视频或未公开源码。
 
 MIT · Zhenzhao Tu
-
-## 0.5：受限环境也能制作原生世界
-
-新增原生 CPU 导出：直接绘制场景几何与像素形状，保留现有美术与交付 UI。受限宿主使用 `--backend cpu`，不启动 Chrome；`auto` 支持浏览器失败后转 CPU。标准几何、抛球和牛背示例均支持。自定义 WebGL 需要适配器，详见[运行能力](skills/pocketworld/references/runtime.md)。生成参考图前先查看极简风格锚点，用户自由描述场景，视觉语言保持克制与留白。
-
-## 0.6：用更少的格子，把故事讲清楚
-
-先决定轮廓、间隙、支撑和动作，再选择头、手、道具的格数，最后确定画布。[美术教学对照](skills/pocketworld/references/art-studies.md)包含过细／概括得当／过粗的同场景对比、真实中间稿，以及动作中断颈的修正案例。新的原生像素模板和无需浏览器的细看工具，让 agent 先看清自己的造型，再继续动画和润色。
-
-![池畔陶艺：原生造型与连续动作](examples/pottery/loop.gif)
-
-云端 agent 能在自己的执行环境用 CPU 绘制、导出并发送图片、视频、GIF 和交付包，不要求云电脑的 localhost 能被用户打开。本地使用时仍然保留完整播放器、重播、时间轴、细看和透明组件。陶艺、抛球和牛背示例都可运行；复杂造型仍需要实际视觉判断。

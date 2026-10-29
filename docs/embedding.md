@@ -13,6 +13,20 @@ Choose **transparent web component** in the review UI, or export with `--formats
 
 `mount(container, {paused, opaque})` returns a custom element. Background is transparent unless `opaque:true` requests white. Set width on the host container and use integer multiples of the native grid where practical. Native pixels remain unsmoothed; extreme host resizing can change their apparent size.
 
+## Use the bicycle sample
+
+Copy [`examples/bicycle/component.js`](../examples/bicycle/component.js) to your website, for example as `/worlds/bicycle.js`:
+
+```html
+<div id="bicycle-world" style="width:384px;max-width:100%"></div>
+<script type="module">
+  import { mount } from '/worlds/bicycle.js';
+  const bicycle = mount(document.querySelector('#bicycle-world'));
+</script>
+```
+
+It runs without the review UI, a backend or an API key. If your site already has a draggable widget, mount the world inside that widget's content area and keep the existing drag handle. Dragging belongs to the host website; the scene supplies animation and playback controls. Keep the source [sample notes](samples.md) with your project if you want to edit the artwork later. Sites with strict CSP can use the unbundled files described below.
+
 ## Two different worlds on one page
 
 ```html

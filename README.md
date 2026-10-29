@@ -53,6 +53,18 @@ Download a generated component and host it with your page. See [embedding](docs/
 
 ## Try a different small story
 
+### Made with Pocketworld
+
+Two quiet scenes to watch, take apart, and make your own. Both include the finished animation, review player and editable source.
+
+| Afternoon bicycle repair | Pottery by the pond |
+|:---:|:---:|
+| <img src="examples/bicycle/loop.gif" width="360" alt="A mechanic turns the crank, watches the rear wheel coast down, while a cat rests by the paving"> | <img src="examples/pottery/loop.gif" width="360" alt="A potter shapes a vessel while a duck leans down to drink beside the pond"> |
+| A turn of the pedal. A wheel slowly coming to rest. A breathing cat and a passing breeze. | Hands following the clay. A duck drinking, swallowing, and taking its time. |
+| [60 fps video](examples/bicycle/loop.mp4) · [Review player](examples/bicycle/index.html) · [Editable source](skills/pocketworld/assets/examples/bicycle) | [60 fps video](examples/pottery/loop.mp4) · [Review player](examples/pottery/index.html) · [Editable source](skills/pocketworld/assets/examples/pottery) |
+
+Serve the repository locally to open the players. The GIFs play here on GitHub; the videos show the subtler timing. [Sample guide](docs/samples.md) · [Use the bicycle on your website](docs/embedding.md#use-the-bicycle-sample). These are finished examples refined through art direction, not one-shot guarantees.
+
 > A tiny summer stall. The fan turns; a curtain catches the breeze.
 
 > A buffalo chewing grass while a shepherd sleeps on its back, breathing slowly.
@@ -78,9 +90,7 @@ Native CPU export works in browser-restricted agent environments, covering stand
 
 Start with what makes the scene recognizable: its silhouette, spacing, supports and action. The new [annotated studies](skills/pocketworld/references/art-studies.md) show fine, deliberately simplified and over-coarse versions; real construction stages; and a moving neck that needed a structural repair. Choose feature budgets before canvas size. A browser-free study helper saves exact native frames and detail crops before polishing.
 
-![Pottery: authored native shapes and connected motion](examples/pottery/loop.gif)
-
-The pottery scene is a runnable example, alongside the three-ball juggler and resting ox. The new direct-cell starter complements geometric volume; both use the same player and exports. These tools help the agent inspect its work; they do not replace artistic judgment or reconstruct arbitrary photographs automatically.
+Pottery and bicycle repair are runnable samples alongside the three-ball juggler and resting ox. The direct-cell starter complements geometric volume; both use the same player and exports. These tools help the agent inspect its work; they do not replace artistic judgment or reconstruct arbitrary photographs automatically.
 
 ## Run the example yourself
 
