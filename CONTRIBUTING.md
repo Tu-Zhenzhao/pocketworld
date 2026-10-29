@@ -7,6 +7,7 @@ npm ci
 npm run setup
 python3 -m pip install -r tests/requirements.txt  # development media verification only
 npm test
+npm run test:cpu
 npm run test:native
 npm run test:install
 node tests/examples.mjs
@@ -19,3 +20,5 @@ Playwright uses the detected Chrome; no Playwright browser download is necessary
 Verify actual alpha and a white object, backward seeking, loop behavior, controls, responsive layout, component lifetime and two different scenes on one page. Check actual video/GIF metadata/playback and new-scene output. A clean installed Skill must work from outside this repository with its own `npm ci`.
 
 For a release, update root/package lock and Skill script package/lock versions, `skills/pocketworld/VERSION`, `INSTALL.md`, README release links and changelog. Regenerate examples from canonical sources, then the README GIF. Package owned source/media only; include manifest hashes and SHA256SUMS. Run all checks, publish the reviewed commit/tag and attach the release archives. Do not put browser binaries, local cache paths, credentials, generated frame caches or third-party artist footage in Git or release archives.
+
+Browserless CI runs the native CPU suite independently. Before claiming target-agent compatibility, validate an actual fresh install and new render in that host, not just developer/CI browsers. Preserve the approved reference style by inspecting its visual anchors before image generation.

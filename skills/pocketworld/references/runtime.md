@@ -13,7 +13,7 @@ Rendering style and execution backend are separate. CPU draws authored native sh
 
 `auto` tries browser capture and falls back to CPU with the original browser error recorded in `manifest.json`. `browser` fails strictly if unavailable. In known restricted hosts choose `cpu` immediately; it starts no browser/server/CDP and requires no network sockets while drawing. Installation downloads locked npm dependencies, which still needs network/package access. The native canvas binary must support the host OS and architecture.
 
-Setup defaults to installing dependencies and running a real CPU geometry/motion/alpha self-test, without downloading Chrome. A discovered Chrome path does not mean Chrome can launch. Browser capture can be enabled with `setup.mjs --install-browser`; then use `doctor.mjs --backend browser`. Existing explicit CHROME is authoritative. Do not disable security policies to run Chrome.
+Setup defaults to installing dependencies and running a real CPU geometry/motion/alpha self-test, without downloading Chrome. A discovered Chrome path does not mean Chrome can launch. Browser capture can be enabled with `setup.mjs --install-browser`; then use `doctor.mjs --backend browser`. An explicit CHROME is authoritative for browser capture/download; CPU-only setup does not fail because an optional browser path is missing. Do not disable security policies to run Chrome.
 
 ```sh
 node SKILL_ROOT/scripts/setup.mjs

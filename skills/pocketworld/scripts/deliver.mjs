@@ -77,6 +77,6 @@ export async function deliver(sceneDir,out,formats,{variant,backend='auto'}={}){
 }
 if(process.argv[1]&&(await fs.realpath(process.argv[1]).catch(()=>null))===(await fs.realpath(fileURLToPath(import.meta.url)))){
  const args=process.argv.slice(2),source=args.shift(),outIndex=args.indexOf('--out'),formatIndex=args.indexOf('--formats');
- if(!source||outIndex<0||!args[outIndex+1]){console.error('Usage: node deliver.mjs <scene-folder> --out <fresh-output-directory> --formats preview|video,gif,component');process.exitCode=1}
+ if(!source||outIndex<0||!args[outIndex+1]){console.error('Usage: node deliver.mjs <scene-folder> --out <fresh-output-directory> --formats preview|video,gif,component [--backend auto|cpu|browser]');process.exitCode=1}
  else try{await deliver(source,args[outIndex+1],(formatIndex<0?'preview':args[formatIndex+1]||'preview').split(','),{variant:args.includes('--variant')?args[args.indexOf('--variant')+1]:undefined,backend:args.includes('--backend')?args[args.indexOf('--backend')+1]:'auto'})}catch(error){console.error(error.message);process.exitCode=1}
 }
