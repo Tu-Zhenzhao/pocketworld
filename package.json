@@ -1,6 +1,6 @@
 {
   "name": "pocketworld",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "description": "An agent skill: one sentence, one image, a living pixel world for videos and websites.",

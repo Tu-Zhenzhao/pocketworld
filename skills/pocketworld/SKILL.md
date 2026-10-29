@@ -3,7 +3,7 @@ name: pocketworld
 description: Create and refine animated pixel dioramas from a scene idea and reference image, with native pixel characters, geometric volume, connected motion and a review player offering video, GIF or transparent web component delivery.
 ---
 
-# Pocketworld 0.5.0
+# Pocketworld 0.5.1
 
 Author a little world at its final pixel grid. The image guides composition, palette and anatomy; construct native shapes and actions for the actual story. The calling agent performs the design and coding. Complex subjects may need several refinements.
 
