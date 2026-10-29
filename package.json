@@ -1,6 +1,6 @@
 {
   "name": "pocketworld",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "An agent skill: one sentence, one image, a living pixel world for videos and websites.",
@@ -15,13 +15,15 @@
     "setup": "node cli/pocketworld.js setup",
     "render": "node cli/pocketworld.js render",
     "test": "node --test tests/*.test.js",
+    "test:cpu": "node tests/cpu.mjs",
     "test:native": "node tests/native-delivery.mjs",
     "test:install": "node tests/install-smoke.mjs",
     "package:release": "node tools/package.mjs"
   },
   "devDependencies": {
-    "puppeteer-core": "24.15.0",
-    "playwright": "1.62.1"
+    "@napi-rs/canvas": "1.0.13",
+    "playwright": "1.62.1",
+    "puppeteer-core": "24.15.0"
   },
   "license": "MIT",
   "engines": {

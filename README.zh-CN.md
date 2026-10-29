@@ -6,7 +6,7 @@
 
 把一个小念头交给你的 Agent，让它在像素里生活起来。
 
-[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.4.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.4.0)
+[让 Agent 安装](INSTALL.md) · [English](README.md) · [嵌入网页](docs/embedding.md) · [下载 0.5.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.0)
 
 ![树下抛三个球的原生像素角色](examples/juggler/loop.gif)
 
@@ -27,7 +27,7 @@ https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
 安装好后，做一个小世界：一个人在树下轻轻抛三个球，旁边有一张木长椅。
 ```
 
-安装入口会指导 Agent 确认宿主的 Skill 目录、准备运行环境、检查浏览器，并真正跑一遍示例。Agent 需要能够读写文件、运行终端命令；你已有参考图时，不必另外具备生图工具。
+安装入口会指导 Agent 确认宿主的 Skill 目录、准备运行环境、验证原生 CPU 渲染，并真正跑一遍示例。Agent 需要能够读写文件、运行终端命令；你已有参考图时，不必另外具备生图工具。
 
 ## 让它出现在你想要的地方
 
@@ -67,16 +67,20 @@ Pocketworld 按目标网格设计轮廓、色块和细线；让手与道具、�
 ## 自己运行示例
 
 ```sh
-git clone --depth 1 --branch v0.4.0 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.5.0 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo
 ```
 
-打开打印出的本地地址。仓库自带可直接播放的成品示例；制作新输出时，先运行 `npm run setup -- --install-browser`，再读[制作说明](docs/authoring.md)。工具需要 Node20+；仅导出视频/GIF 时需要 ffmpeg。场景运行不需要 Python 或模型 API Key。
+打开打印出的本地地址。仓库自带可直接播放的成品示例；制作新输出时，先运行 `npm run setup`，再读[制作说明](docs/authoring.md)。工具需要 Node20+；仅导出视频/GIF 时需要 ffmpeg。场景运行不需要 Python 或模型 API Key。
 
 [Agent 安装](INSTALL.md) · [美术与制作](docs/authoring.md) · [网页组件](docs/embedding.md) · [排错](docs/troubleshooting.md) · [验证与贡献](CONTRIBUTING.md)
 
 灵感来自 Shawn 的像素小世界。随包代码和示例渲染均由本项目自行制作，不包含原作者的视频或未公开源码。
 
 MIT · Zhenzhao Tu
+
+## 0.5：受限环境也能制作原生世界
+
+新增原生 CPU 导出：直接绘制场景几何与像素形状，保留现有美术与交付 UI。受限宿主使用 `--backend cpu`，不启动 Chrome；`auto` 支持浏览器失败后转 CPU。标准几何、抛球和牛背示例均支持。自定义 WebGL 需要适配器，详见[运行能力](skills/pocketworld/references/runtime.md)。生成参考图前先查看极简风格锚点，用户自由描述场景，视觉语言保持克制与留白。

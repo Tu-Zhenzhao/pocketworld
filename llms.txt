@@ -1,4 +1,4 @@
-# Pocketworld 0.4.0
+# Pocketworld 0.5.0
 
 An agent skill for native pixel dioramas from a scene description and reference image.
 
@@ -8,4 +8,4 @@ An agent skill for native pixel dioramas from a scene description and reference 
 - Embedding: https://github.com/Tu-Zhenzhao/pocketworld/blob/main/docs/embedding.md
 - Releases: https://github.com/Tu-Zhenzhao/pocketworld/releases/latest
 
-Install the full skills/pocketworld directory, including assets, references and scripts. Do not install only SKILL.md. Run setup, doctor and the shipped example. Read the Skill before creating a new scene. Runtime needs Node20+ and WebGL2 Chrome; video/GIF encoding needs ffmpeg. Scene authoring uses the calling agent's tools; the renderer is not an image reconstruction model.
+Install the full skills/pocketworld directory, including assets, references and scripts. Do not install only SKILL.md. Run setup, doctor and the shipped example. Read the Skill before creating a new scene. Runtime needs Node20+; native CPU export works without Chrome using --backend cpu. Browser capture is optional; viewing geometry components needs a WebGL2-capable browser. Video/GIF encoding needs ffmpeg. See skills/pocketworld/references/runtime.md for custom-adapter boundaries. Scene authoring uses the calling agent's tools; the renderer is not an image reconstruction model.

@@ -1,8 +1,9 @@
 {
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "dependencies": {
+    "@napi-rs/canvas": "1.0.13",
     "puppeteer-core": "24.15.0"
   }
 }

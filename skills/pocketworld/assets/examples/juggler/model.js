@@ -1,4 +1,5 @@
 // Authored native pixel character + geometry scene. No reference image pixels.
+import {TriangleRaster,hash} from '../../engine/software.js';
 export const GRID = 240;
 export const LOOP = 12;
 export const CAMERA = Object.freeze({azimuth:45,elevation:30,span:6.15,target:[0,.63,0]});
@@ -151,6 +152,16 @@ export class VolumeRenderer{
  drawMesh(a){const gl=this.gl;gl.bindBuffer(gl.ARRAY_BUFFER,this.buf);gl.bufferData(gl.ARRAY_BUFFER,a,gl.DYNAMIC_DRAW);gl.drawArrays(gl.TRIANGLES,0,a.length/7)}
  destroy(){this.gl.deleteBuffer(this.buf);this.gl.deleteProgram(this.p);this.gl.getExtension('WEBGL_lose_context')?.loseContext();}
  read(){const gl=this.gl,n=this.canvas.width,raw=new Uint8Array(n*n*4);gl.readPixels(0,0,n,n,gl.RGBA,gl.UNSIGNED_BYTE,raw);const a=new Uint8ClampedArray(raw.length);for(let y=0;y<n;y++)a.set(raw.subarray((n-1-y)*n*4,(n-y)*n*4),y*n*4);return new ImageData(a,n,n)}
+}
+// Software path uses the same meshes, deformation, ramps and contact-shadow model.
+export class SoftwareVolumeRenderer {
+ constructor(canvas){this.canvas=canvas;this.background=background(0);this.raster=new TriangleRaster(canvas,CAMERA)}
+ draw(t,opts={}){const s=world(t,opts),r=this.raster;r.begin();const shade=(p,n,m,th)=>{let value=.34+.66*Math.max(0,(-.6*n[0]+n[1]+.8*n[2])/(Math.hypot(...n)*Math.sqrt(2)||1));if(opts.flat)value=.70;if(m===1)value+=.055*(hash(Math.floor(p[0]*22),Math.floor(p[2]*22))-.5);if(m===0||m===11)value+=.085*(hash(Math.floor(p[0]*31),Math.floor(p[2]*31))-.5);
+  if(m===0||m===1){value=.70;const foot=actorPoint([0,0,0],s.actorX),x=p[0]-foot[0]-.32,z=p[2]-foot[2]+.18;value*=1-.43*Math.exp(-((x*.9)**2+(z*1.8)**2)*2.4);value*=1-.19*Math.exp(-((p[0]+.65)**2+(p[2]+.70)**2)*2.7);for(const ball of s.balls){const dx=p[0]-ball.p[0]-.19*ball.p[1],dz=p[2]-ball.p[2]+.11*ball.p[1],radius=.075+ball.p[1]*.034;value*=1-.15*Math.exp(-(dx*dx+dz*dz)/(radius*radius))}}
+  const f=clamp(value)*3;let ix=m>=2&&m<=6?Math.floor(f+.5):Math.floor(f)+(f-Math.floor(f)>th?1:0);return RAMPS[m][clamp(ix,0,3)].map(v=>v*255)};
+  const vertex=(p,m)=>{if(m===11)p[0]+=.014*Math.sin(t*2*pi/6+p[2]*2);if(m===0&&p[1]>.01)p[0]+=.012*(p[1]/.13)*Math.sin(t*2*pi/3+p[2]*6);return p},options={zoom:opts.zoom||1,vertex,shade};r.mesh(this.background,options);if(!opts.noActor)r.mesh(character(s),options);if(!opts.noBalls){const b=meshBuilder();for(const ball of s.balls)b.ellipsoid(ball.p,[.047,.047,.047],ball.mat,12,8);r.mesh(new Float32Array(b.a),options)}r.end();return s;
+ }
+ destroy(){this.raster=null}
 }
 // Hard cell rasterizer. Shapes own cells; no Canvas antialiasing or image reduction.
 class PixelPen{

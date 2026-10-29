@@ -4,12 +4,12 @@ Start with `node /path/to/pocketworld/scripts/doctor.mjs` (or `npm run doctor` i
 
 | Symptom | Action |
 |---|---|
-| Missing Node modules | Run the installed `scripts/setup.mjs --install-browser`; it uses the shipped lockfile |
-| Chrome not found | Run setup with `--install-browser`, or set `CHROME` to its executable path |
+| Missing Node modules | Run the installed `scripts/setup.mjs`; it uses the shipped lockfile |
+| Chrome not found | CPU export works without Chrome. For optional browser capture use setup `--install-browser` or explicit `CHROME` |
 | Invalid `CHROME` | Fix or unset it; an explicit override is authoritative |
-| System Chrome is unstable | Unset `CHROME`, then run `scripts/setup.mjs --install-browser --force-browser-download` to use managed Chrome for Testing |
+| System Chrome is unstable | Unset `CHROME`, then run `scripts/setup.mjs --force-browser-download` to use managed Chrome for Testing |
 | Chrome exits on Linux | Install the browser's system libraries using the host's package manager; CI uses Ubuntu with Chrome for Testing. `ldd /path/to/chrome` can identify missing libraries |
-| Browser execution forbidden by the host | Keep source and diagnostics; report preview unverified. There is no native-scene CPU fallback |
+| Browser execution forbidden by the host | Use `--backend cpu`: standard geometry, shipped examples and canvas-only custom renderers work without Chrome. Keep browser checks unverified; do not change host security policy |
 | Missing ffmpeg | Install ffmpeg or set `FFMPEG_PATH`; preview/component export does not require it |
 | Output directory already exists | Choose a fresh output directory; existing results are protected |
 | Component blocked by CSP | Use `component-module.js` with its `engine/` and `scenes/` directories; permit the resulting script paths |
@@ -20,3 +20,5 @@ Start with `node /path/to/pocketworld/scripts/doctor.mjs` (or `npm run doctor` i
 | Scene is unattractive despite passing tests | Inspect silhouette, pose and cell budget first; use the drawing recipes. Export tests do not score aesthetics |
 
 No runtime API key is required. Reference image generation uses the calling agent's image tool; if unavailable, use a supplied image or create a native blockout and describe the missing reference step honestly.
+
+See [runtime capabilities](../skills/pocketworld/references/runtime.md). If the default home npm cache is unavailable, setup uses a task-safe temporary cache; an explicit npm cache setting remains authoritative. A custom WebGL renderer needs a CPU adapter and must report unsupported otherwise.

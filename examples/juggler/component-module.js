@@ -17,6 +17,6 @@ export class PocketworldScene extends HTMLElement {
  seek(seconds){if(!Number.isFinite(seconds))throw Error('seek expects finite seconds');this.time=((seconds%scene.config.loop)+scene.config.loop)%scene.config.loop;this.last=null;this.draw()}
  destroy(){cancelAnimationFrame(this.raf);this.raf=0;this.observer?.disconnect();document.removeEventListener('visibilitychange',this.changed);this.motion?.removeEventListener('change',this.reduced);this.renderer?.destroy();this.renderer=null;this.last=null}
 }
-export const tagName='pocketworld-juggler-8416974d';
+export const tagName='pocketworld-juggler-9603749c';
 if(!customElements.get(tagName))customElements.define(tagName,PocketworldScene);
 export function mount(container,{paused=false,opaque=false}={}){if(!container?.appendChild)throw Error('mount requires a DOM container');const element=document.createElement(tagName);if(paused)element.setAttribute('paused','');if(opaque)element.setAttribute('opaque','');container.appendChild(element);return element}

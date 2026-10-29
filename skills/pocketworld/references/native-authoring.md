@@ -1,6 +1,6 @@
 # Native authoring
 
-This is a scene toolkit used by the calling agent, not an image reconstruction model. It requires a browser with WebGL2. If the host cannot render, retain source/diagnostics and report the preview as unverified; do not silently substitute raster pixelation.
+This is a scene toolkit used by the calling agent, not an image reconstruction model. Native CPU export requires Node20+ and the installed canvas dependency, with no browser, server or CDP. Browser capture remains available. See [runtime support](runtime.md) for capability boundaries.
 
 ## Default scene adapter
 
@@ -21,7 +21,7 @@ Optional material0 `config.field` gives an elliptical meadow: `radii`, optional 
 
 ## Scene-owned renderer
 
-Native sprites, geometry and their combinations can also expose `createRenderer(canvas)` instead of `geometry`. This returns an independent object with `canvas`, 2D `ctx`, `draw(time, options)`, `capture(integerScale)`, and idempotent `destroy()`. Draw clears stale pixels, preserves alpha and accepts `opaque`; capture returns base64 PNG. Each mount owns resources and state. The juggler example demonstrates a native character with geometric scenery/shadows; the ox scene uses the default geometry renderer. Both use exactly the same review/export/component path.
+Native sprites, geometry and their combinations can also expose `createRenderer(canvas, execution)` instead of `geometry`. This returns an independent object with `canvas`, 2D `ctx`, `draw(time, options)`, `capture(integerScale)`, and idempotent `destroy()`. Draw clears stale pixels, preserves alpha and accepts `opaque`; capture returns base64 PNG. Each mount owns resources and state. The juggler example demonstrates a native character with geometric scenery/shadows; the ox scene uses the default geometry renderer. Both use exactly the same review/export/component path. `execution.backend` is `cpu` for Node export; use `SoftwareRenderer` / `TriangleRaster` from `engine/software.js` for custom geometry, or ordinary Canvas2D native drawing. Node provides `document.createElement("canvas")` and `ImageData`, not a browser DOM or WebGL. Do not import Node-only dependencies from scene modules: the same source must still run in a browser. A custom WebGL renderer without a CPU adapter must report unsupported; do not substitute another scene.
 
 Do not borrow one rig for every species or preload the shipped example as a replacement for the requested story.
 
@@ -44,8 +44,8 @@ Crops are integer native cells inside the frame. `whole` is reserved. Alternativ
 Replace `SKILL_ROOT` with its actual absolute path:
 
 ```sh
-node SKILL_ROOT/scripts/setup.mjs --install-browser
-node SKILL_ROOT/scripts/doctor.mjs
+node SKILL_ROOT/scripts/setup.mjs
+node SKILL_ROOT/scripts/doctor.mjs --backend cpu
 node SKILL_ROOT/scripts/deliver.mjs /absolute/scene --out /absolute/fresh-review --formats preview
 node SKILL_ROOT/scripts/serve.mjs /absolute/fresh-review
 # Once the user chooses:

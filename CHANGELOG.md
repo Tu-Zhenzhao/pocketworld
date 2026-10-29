@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 — 2026-10-29
+
+- Native CPU export for standard geometry, material ramps, contact fields and pixel details, plus both juggler representations and the redesigned ox. Browser capture remains available; auto records browser failures and falls back without reverting to image pixelation.
+- Canvas-only custom renderers can run in the Node canvas host; custom WebGL requires a CPU adapter and unsupported scenes fail explicitly. Manifest records the actual backend.
+- Setup verifies real CPU geometry, motion and alpha; no browser download by default. Writable scoped npm cache avoids reliance on writable home directories.
+- Reference generation now views and supplies approved sparse style anchors, with a reusable minimal prompt and checks against overdecorated storybook illustrations.
+- Preserved review player, details, variants, alpha components and regenerated examples; added CPU/GPU silhouette and browserless export regression tests.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

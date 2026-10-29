@@ -1,4 +1,5 @@
 import {cameraBasis} from './math.js';
+import {SoftwareRenderer} from './software.js';
 const VS=`#version 300 es
 precision highp float;
 in vec3 aP,aN;in float aM;uniform vec3 uTarget,uRight,uUp,uForward;uniform float uSpan;
@@ -45,4 +46,4 @@ export class HybridRenderer {
  capture(scale=3){const c=document.createElement('canvas');c.width=c.height=this.canvas.width*scale;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.drawImage(this.canvas,0,0,c.width,c.height);return c.toDataURL('image/png').split(',')[1]}
 }
 
-export function mountRenderer(canvas,scene){return scene.createRenderer?scene.createRenderer(canvas):new HybridRenderer(canvas,scene)}
+export function mountRenderer(canvas,scene,options={}){return scene.createRenderer?scene.createRenderer(canvas,options):options.backend==='cpu'?new SoftwareRenderer(canvas,scene):new HybridRenderer(canvas,scene)}

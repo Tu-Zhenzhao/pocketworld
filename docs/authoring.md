@@ -10,7 +10,7 @@ In a repository checkout:
 
 ```sh
 npm ci
-npm run setup -- --install-browser
+npm run setup
 npm run doctor
 node cli/pocketworld.js init my-scene
 # Edit my-scene/scene.js and delivery.json for the user's actual story.
@@ -44,3 +44,5 @@ node cli/pocketworld.js render skills/pocketworld/assets/examples/juggler \
 Use a fresh output directory. The helper refuses to overwrite an existing result. It captures new RGBA frames and lists actual files/hashes in `manifest.json`. Review that manifest and verify encoded output before handoff. A generated artifact is not an aesthetic approval.
 
 Video/GIF need ffmpeg. Exports use integer scaling; odd native grids use ×4 so H.264 output dimensions stay even. The component needs WebGL2 and a host that allows scripts; [embedding](embedding.md) covers both standalone and module source.
+
+In browser-restricted environments add `--backend cpu` to doctor and render/deliver. CPU preserves native geometry, palette and actions; it never quantizes a reference. See [capabilities and custom adapters](../skills/pocketworld/references/runtime.md).

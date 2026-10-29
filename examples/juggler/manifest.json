@@ -1,8 +1,11 @@
 {
-  "createdAt": "2026-10-28T15:21:34.246Z",
+  "createdAt": "2026-10-29T05:42:45.664Z",
   "status": "generated",
-  "version": "0.4.0",
-  "componentTag": "pocketworld-juggler-8416974d",
+  "version": "0.5.0",
+  "backend": "browser",
+  "requestedBackend": "browser",
+  "browserError": null,
+  "componentTag": "pocketworld-juggler-9603749c",
   "title": "Small acts, three balls",
   "selectedVariant": "sprite",
   "grid": 240,
@@ -16,7 +19,7 @@
     "component": {
       "file": "component.js",
       "example": "embed.html",
-      "tagName": "pocketworld-juggler-8416974d",
+      "tagName": "pocketworld-juggler-9603749c",
       "alpha": true
     },
     "video": {
@@ -48,15 +51,15 @@
     },
     "component-module.js": {
       "bytes": 3216,
-      "sha256": "f8d4840f07ffe73f5fd0373491ffb80351c7f7f2ea36c385ff6b01d1af41990e"
+      "sha256": "b3f0f7637168b7607803ff33a226deb8f38b3029d42e2bf74149e8ed1a5efbb3"
     },
     "component.js": {
-      "bytes": 79498,
-      "sha256": "652b97ca7228c059df7cacf0bf9e41a70f14d45165c65c4a5a9f55e4e6a38f52"
+      "bytes": 136918,
+      "sha256": "4fa9322485136e0736c10e3d4a95af3680268636a708b840a073e0d7e27af0dc"
     },
     "embed.html": {
       "bytes": 459,
-      "sha256": "80ae427ec3c188f6b1cb61d8aaa196b9015599ff5959ed79c734af8467b28311"
+      "sha256": "1f8aff5ca89155125ccf07b53f8bb4732513705569ba11b07a0b213d7a267468"
     },
     "engine/math.js": {
       "bytes": 1172,
@@ -71,12 +74,16 @@
       "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
     },
     "engine/renderer.js": {
-      "bytes": 6164,
-      "sha256": "e265fa026926f7380d1145a056dc32889c87cc72f0a3d36d39c7182bd8975865"
+      "bytes": 6290,
+      "sha256": "bd093dbbb8e4567e086c6571c324e004e97ba9bdf9933f0c45bdf0494d612e65"
+    },
+    "engine/software.js": {
+      "bytes": 4480,
+      "sha256": "d6c45b148d66f616f640f4afd4cd23394ea51c1b7b7b0188b888b160ff1043c2"
     },
     "index.html": {
-      "bytes": 90064,
-      "sha256": "ff20ff511ab08d973c22a97d7528729d0f32bc114c5b34cb095d45773b8e5419"
+      "bytes": 147484,
+      "sha256": "29386d8d611f6419b37854530aac03d747e5d3a7526bcad79650209d0ee77241"
     },
     "loop.gif": {
       "bytes": 1985815,
@@ -95,12 +102,12 @@
       "sha256": "21932bcb26c3e615b1dcde5d142ba9df11508b9ba4976837d86cf6728bddac4d"
     },
     "scenes/current/model.js": {
-      "bytes": 17067,
-      "sha256": "d3d965010bcfd490bab18238e866acba96b98823585466cc5bee6b596661fdf2"
+      "bytes": 18736,
+      "sha256": "0c85dc96928009f90e98555c830750b4b6d22ec983f242951bd8fb3ee9c78c5c"
     },
     "scenes/current/scene.js": {
-      "bytes": 1371,
-      "sha256": "8176134a3f9575ef13d3901d717b014fd56c0d6f06fb04c277bfba575396071b"
+      "bytes": 1469,
+      "sha256": "707a1da9ff8e20943ea8df6cc5c12f62f3d0b8bc8157bf22d370fb4f4774aea1"
     }
   }
 }

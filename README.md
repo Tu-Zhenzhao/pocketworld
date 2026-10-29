@@ -6,7 +6,7 @@
 
 Give your agent a scene idea and a reference image. Let a tiny pixel world come to life.
 
-[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.4.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.4.0)
+[Install with your agent](INSTALL.md) · [中文](README.zh-CN.md) · [Website integration](docs/embedding.md) · [Download 0.5.0](https://github.com/Tu-Zhenzhao/pocketworld/releases/tag/v0.5.0)
 
 ![A native pixel character juggling three balls beside a tree and bench](examples/juggler/loop.gif)
 
@@ -28,7 +28,7 @@ Then create a pocket world: a person quietly juggling three balls
 under a tree, with a wooden bench nearby.
 ```
 
-The installation guide helps the agent choose its Skill directory, install the self-contained runtime, check the browser and run a real example. It works with agents that can read files and run terminal commands. An existing reference image makes an image-generation tool optional.
+The installation guide helps the agent choose its Skill directory, install the self-contained runtime, check native rendering and run a real example. It works with agents that can read files and run terminal commands. An existing reference image makes an image-generation tool optional.
 
 ## A little world, wherever you want it
 
@@ -70,16 +70,20 @@ Your scene can be a person, an animal, an object, a place or a small interaction
 
 The agent authors and refines the scene. Complex anatomy and choreography can take more iterations; this is not an automatic reconstruction service for arbitrary photographs.
 
+## Native worlds, even without Chrome
+
+Version 0.5 adds native CPU export for browser-restricted agent environments, covering standard geometry and both included examples. The same authored shapes and motion produce the poster, video, GIF and component package. Use `--backend cpu` for a browser-free run, or `auto` for browser capture with CPU fallback. See [runtime support](skills/pocketworld/references/runtime.md) for custom-renderer boundaries. Reference-image prompts now use the approved minimalist visual anchors across different stories.
+
 ## Run the example yourself
 
 ```sh
-git clone --depth 1 --branch v0.4.0 https://github.com/Tu-Zhenzhao/pocketworld.git
+git clone --depth 1 --branch v0.5.0 https://github.com/Tu-Zhenzhao/pocketworld.git
 cd pocketworld
 npm ci
 npm run demo
 ```
 
-Open the printed local URL. The checked-in example plays directly in a WebGL2 browser. To create fresh exports, run `npm run setup -- --install-browser`, then follow [authoring](docs/authoring.md). Node20+ is required for tooling; ffmpeg is needed only for video/GIF encoding. No Python or model API key is required by the scene runtime.
+Open the printed local URL. The checked-in example plays directly in a WebGL2 browser. To create fresh exports, run `npm run setup`, then follow [authoring](docs/authoring.md). Node20+ is required for tooling; ffmpeg is needed only for video/GIF encoding. No Python or model API key is required by the scene runtime.
 
 [Agent installation](INSTALL.md) · [Authoring](docs/authoring.md) · [Embedding](docs/embedding.md) · [Troubleshooting](docs/troubleshooting.md) · [Contributing & verification](CONTRIBUTING.md) · [Migration from 0.3](docs/migration.md)
 
