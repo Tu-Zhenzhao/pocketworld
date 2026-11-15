@@ -1,0 +1,14 @@
+{
+  "title": "A quiet pause",
+  "caption": "A stylized fictional vignette: silver hair, a leather jacket on a rack, and a GPU footrest.",
+  "language": "en",
+  "focus": [
+    {"id": "gesture", "label": "Silver hair and gesture", "rect": [54, 28, 67, 92]},
+    {"id": "support", "label": "Foot and fans", "rect": [57, 126, 79, 66]},
+    {"id": "jacket", "label": "Waiting jacket", "rect": [129, 57, 61, 80]}
+  ],
+  "variants": [
+    {"id": "default", "label": "Quiet pause", "options": {}}
+  ]
+}
+
