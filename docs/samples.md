@@ -1,11 +1,12 @@
 # Watch, inspect, make it yours
 
-The main README keeps the three-ball juggler as its opening scene. The additional gallery contains two finished, editable worlds:
+The main README keeps the three-ball juggler as its opening scene. The additional gallery contains three finished, editable worlds:
 
 | Sample | Finished review and exports | Canonical source |
 |---|---|---|
 | Afternoon bicycle repair / 午后修单车 | [Review](../examples/bicycle/index.html), [MP4](../examples/bicycle/loop.mp4), [GIF](../examples/bicycle/loop.gif), [component](../examples/bicycle/component.js) | [Scene](../skills/pocketworld/assets/examples/bicycle/scene.js), [base drawing and transmission](../skills/pocketworld/assets/examples/bicycle/base.js), [art decisions](../skills/pocketworld/assets/examples/bicycle/ART_DIRECTION.md) |
 | Pottery by the pond / 池畔陶艺 | [Review](../examples/pottery/index.html), [MP4](../examples/pottery/loop.mp4), [GIF](../examples/pottery/loop.gif), [component](../examples/pottery/component.js) | [Scene](../skills/pocketworld/assets/examples/pottery/scene.js), [annotated studies](../skills/pocketworld/references/art-studies.md) |
+| A quiet pause / 安静的停顿 | [Review](../examples/jacket-pause/index.html), [MP4](../examples/jacket-pause/loop.mp4), [GIF](../examples/jacket-pause/loop.gif), [component](../examples/jacket-pause/component.js) | [Scene](../skills/pocketworld/assets/examples/jacket-pause/scene.js), [art decisions](../skills/pocketworld/assets/examples/jacket-pause/ART_DIRECTION.md) |
 
 These original scene sources and renders are included under the repository's MIT license. They were refined through user art direction and agent iteration. Artist reference footage, private conversations, temporary diagnostics and machine-specific paths are not part of the samples.
 
@@ -16,6 +17,7 @@ From a current main checkout, run `npm ci`, then:
 ```sh
 node skills/pocketworld/scripts/serve.mjs examples/bicycle
 # Or: node skills/pocketworld/scripts/serve.mjs examples/pottery
+# Or: node skills/pocketworld/scripts/serve.mjs examples/jacket-pause
 ```
 
 Open the printed URL. Each review includes playback, scrubbing, replay, crops, background checks and real format downloads. GitHub displays the GIF but does not run a checked-in HTML player.

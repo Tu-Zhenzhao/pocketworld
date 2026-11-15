@@ -52,13 +52,13 @@ https://raw.githubusercontent.com/Tu-Zhenzhao/pocketworld/main/INSTALL.md
 
 ### 用 Pocketworld 做出来的小世界
 
-两件安静的小作品。可以看，也可以拆开源码，改成你自己的场景。
+三件安静的小作品。可以看，也可以拆开源码，改成你自己的场景。
 
-| 午后修单车 | 池畔陶艺 |
-|:---:|:---:|
-| <img src="examples/bicycle/loop.gif" width="360" alt="站在单车后方的维修者转动踏板，后轮缓缓停下，旁边的小猫轻轻呼吸"> | <img src="examples/pottery/loop.gif" width="陶艺师捏塑陶罐，岸边的鸭子低头喝水"> |
-| 转一下踏板，看车轮慢慢停下。猫在呼吸，草尖偶尔经过一阵风。 | 手沿着陶罐慢慢捏塑。鸭子喝口水，抬头，再歇一会儿。 |
-| [60fps 视频](examples/bicycle/loop.mp4) · [完整播放器](examples/bicycle/index.html) · [可编辑源码](skills/pocketworld/assets/examples/bicycle) | [60fps 视频](examples/pottery/loop.mp4) · [完整播放器](examples/pottery/index.html) · [可编辑源码](skills/pocketworld/assets/examples/pottery) |
+| 午后修单车 | 池畔陶艺 | 安静的停顿 |
+|:---:|:---:|:---:|
+| <img src="examples/bicycle/loop.gif" width="360" alt="站在单车后方的维修者转动踏板，后轮缓缓停下，旁边的小猫轻轻呼吸"> | <img src="examples/pottery/loop.gif" width="陶艺师捏塑陶罐，岸边的鸭子低头喝水"> | <img src="examples/jacket-pause/loop.gif" width="360" alt="虚构的风格化小场景：银色头发，衣架上的皮衣，当作脚踏的显卡"> |
+| 转一下踏板，看车轮慢慢停下。猫在呼吸，草尖偶尔经过一阵风。 | 手沿着陶罐慢慢捏塑。鸭子喝口水，抬头，再歇一会儿。 | 一个虚构的风格化小场景：银色头发，衣架上的皮衣，当作脚踏的显卡。 |
+| [60fps 视频](examples/bicycle/loop.mp4) · [完整播放器](examples/bicycle/index.html) · [可编辑源码](skills/pocketworld/assets/examples/bicycle) | [60fps 视频](examples/pottery/loop.mp4) · [完整播放器](examples/pottery/index.html) · [可编辑源码](skills/pocketworld/assets/examples/pottery) | [60fps 视频](examples/jacket-pause/loop.mp4) · [完整播放器](examples/jacket-pause/index.html) · [可编辑源码](skills/pocketworld/assets/examples/jacket-pause) |
 
 GIF 可以直接在这里看；细微动作建议看视频。完整播放器需下载后在本地启动服务。[示例使用说明](docs/samples.md) · [把修单车放进自己的网站](docs/embedding.md#use-the-bicycle-sample)。这些是经过多轮美术打磨的实际作品，不是一次生成的效果承诺。
 

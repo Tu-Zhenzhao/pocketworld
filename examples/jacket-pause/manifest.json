@@ -1,0 +1,113 @@
+{
+  "createdAt": "2026-11-15T06:50:08.280Z",
+  "status": "generated",
+  "version": "0.6.0",
+  "backend": "cpu",
+  "requestedBackend": "cpu",
+  "browserError": null,
+  "componentTag": "pocketworld-jacket-pause-0d9d6a86",
+  "title": "A quiet pause",
+  "selectedVariant": "default",
+  "grid": 216,
+  "fps": 60,
+  "seconds": 12,
+  "alphaProbe": {
+    "empty": 33348,
+    "solid": 13308
+  },
+  "artifacts": {
+    "component": {
+      "file": "component.js",
+      "example": "embed.html",
+      "tagName": "pocketworld-jacket-pause-0d9d6a86",
+      "alpha": true
+    },
+    "video": {
+      "file": "loop.mp4",
+      "fps": 60,
+      "frames": 720,
+      "seconds": 12,
+      "width": 648,
+      "height": 648,
+      "alpha": false
+    },
+    "gif": {
+      "file": "loop.gif",
+      "fps": 20,
+      "seconds": 12,
+      "width": 648,
+      "height": 648,
+      "alpha": "binary"
+    }
+  },
+  "files": {
+    "README.txt": {
+      "bytes": 316,
+      "sha256": "7f7819afe2bf8a356e0415e3dbb732d9c1dc186311f3081c9738f3397c9966b2"
+    },
+    "app.js": {
+      "bytes": 7184,
+      "sha256": "0c4cbeae349c932d4f56f43796d201bcbb1856b578e4ccc87fe4f71deb5ff917"
+    },
+    "component-module.js": {
+      "bytes": 3221,
+      "sha256": "85921fdf4d7f892d45a7990439ecf8a359a84fd04b122ef100b60ecbe4002f2c"
+    },
+    "component.js": {
+      "bytes": 62338,
+      "sha256": "e9d6b897bd5a8ed8fbd74b30f05022837d4ab55e1764a9c09bdca667eedcd5b3"
+    },
+    "embed.html": {
+      "bytes": 479,
+      "sha256": "5b4b03d29622f184177f9e8af05417e8121166e5a9a1a6cb3bc7f496dc4b53cc"
+    },
+    "engine/math.js": {
+      "bytes": 1172,
+      "sha256": "53dcc9e8d253c43be118dd9cbc3ddc558466968bd28fd90ad5a60f4ed9bfecc7"
+    },
+    "engine/mesh.js": {
+      "bytes": 2599,
+      "sha256": "ee9f44aac08a72e7a0d9b14f2dfa64b2bfee7f0f92b7a3c6e36c5c95354fad43"
+    },
+    "engine/pixels.js": {
+      "bytes": 1829,
+      "sha256": "e1f060653451f507bb10b8c1682544d4585712a9f4ece788e427759f72f289c1"
+    },
+    "engine/renderer.js": {
+      "bytes": 6290,
+      "sha256": "bd093dbbb8e4567e086c6571c324e004e97ba9bdf9933f0c45bdf0494d612e65"
+    },
+    "engine/software.js": {
+      "bytes": 4480,
+      "sha256": "d6c45b148d66f616f640f4afd4cd23394ea51c1b7b7b0188b888b160ff1043c2"
+    },
+    "index.html": {
+      "bytes": 72787,
+      "sha256": "5e7bf6a6f8faea7a0bdc6ac765d75c2bf1c4713fef4c540f2d7c12e4d24ec2fe"
+    },
+    "loop.gif": {
+      "bytes": 3547753,
+      "sha256": "4047c74a2e1db98369982d33e030e2fefa94b8a3f0fa47b5dfb18769d46febb4"
+    },
+    "loop.mp4": {
+      "bytes": 537178,
+      "sha256": "decef4ee834aee2394d3bf3f899b5372cb209b2ea8b6a1a8d45f551913a8587b"
+    },
+    "poster.png": {
+      "bytes": 6044,
+      "sha256": "f99921fb1afa77e7ffc09422aad032020558eeb69e702d98c91a75e90bf4c3c0"
+    },
+    "scenes/current/ART_DIRECTION.md": {
+      "bytes": 1672,
+      "sha256": "52b04a396cb8ef57ba6d52dd482379ba52c80a4866d39337ca98eaccf999e1af"
+    },
+    "scenes/current/delivery.json": {
+      "bytes": 496,
+      "sha256": "e1f9ef824369e0816993546cd17238dad91862bd78a2680f7cc297d95161380a"
+    },
+    "scenes/current/scene.js": {
+      "bytes": 12042,
+      "sha256": "1419de4feace51592c49aada3684c579243226113958f1ab1289627cc89d872c"
+    }
+  }
+}
