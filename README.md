@@ -73,6 +73,18 @@ Serve the repository locally to open the players. The GIFs play here on GitHub; 
 
 Your scene can be a person, an animal, an object, a place or a small interaction. Give the agent a mood, a reference, and one action to care about. Make something for a page header, a loading state, a journal, a desktop corner—or a place we haven't imagined.
 
+## Showcase
+
+Finished animations made with Pocketworld, kept here to watch and share. [One bubble](showcase/one-bubble/) is a rendered showcase without runnable source: the scene file was not kept, so it is not an example to edit or regenerate.
+
+### One bubble
+
+A person in a lab coat and a small robot lean over a table, watching a bubble rise in a test tube.
+
+<img src="showcase/one-bubble/loop.gif" width="648" alt="A person in a lab coat and a small robot lean over a table, watching a bubble rise in a test tube">
+
+[Showcase folder](showcase/one-bubble/) · [Animated GIF](showcase/one-bubble/loop.gif) · [Original WebP](showcase/one-bubble/one-bubble.webp) · [Poster](showcase/one-bubble/poster.png)
+
 ## Built for the pixels
 
 - Shapes are designed at the target grid, with deliberate silhouettes and connected details.

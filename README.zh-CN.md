@@ -70,6 +70,18 @@ GIF 可以直接在这里看；细微动作建议看视频。完整播放器需�
 
 人、动物、器物、植物，或一个很小的互动，都可以成为主角。你可以用它装点日记、博客、加载界面，或者干脆做一个只属于自己的角落。
 
+## 作品展示
+
+用 Pocketworld 做完、放在这里观看和分享的成片。[一颗气泡](showcase/one-bubble/) 是只有渲染结果的展示，没有可运行的场景源码，不能当作示例来修改或重新导出。
+
+### 一颗气泡
+
+一个人穿着实验袍，和一只小机器人一起趴在桌边，看试管里的气泡慢慢升上去。
+
+<img src="showcase/one-bubble/loop.gif" width="648" alt="穿实验袍的人和小机器人趴在桌边，看试管里的气泡升起">
+
+[展示目录](showcase/one-bubble/) · [GIF](showcase/one-bubble/loop.gif) · [原始 WebP](showcase/one-bubble/one-bubble.webp) · [海报](showcase/one-bubble/poster.png)
+
 ## 先让像素讲清楚故事
 
 Pocketworld 按目标网格设计轮廓、色块和细线；让手与道具、光与影、接触与反馈有共同的来由。Skill 自带分类美术规则、可运行示例，以及统一的展示和交付界面。
